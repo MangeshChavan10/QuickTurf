@@ -33,7 +33,7 @@ A full-stack MERN application for seamless sports turf booking, built with React
 
 ```bash
 # 1. Clone the repo
-git clone https://github.com/YOUR_USERNAME/quickturf.git
+git clone https://github.com/MangeshChavan10/quickturf.git
 cd quickturf
 
 # 2. Install root dependencies
