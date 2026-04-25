@@ -1,0 +1,8 @@
+{
+  "name": "QuickTurf",
+  "description": "Premium turf booking platform for football, cricket and more. Find and book your perfect pitch in seconds.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": []
+}
