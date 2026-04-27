@@ -1,3 +1,4 @@
+import { apiFetch } from "../lib/api";
 import { Header, Footer } from "../components/Navigation";
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -22,7 +23,7 @@ export default function Signup() {
     setError("");
 
     try {
-      const res = await fetch("/api/auth/send-otp", {
+      const res = await apiFetch("/api/auth/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -53,7 +54,7 @@ export default function Signup() {
 
     try {
       // First verify OTP
-      const verifyRes = await fetch("/api/auth/verify-otp", {
+      const verifyRes = await apiFetch("/api/auth/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, otp }),
@@ -63,7 +64,7 @@ export default function Signup() {
 
       if (verifyRes.ok) {
         // OTP verified, now create/update user with full details
-        const signupRes = await fetch("/api/auth/signup", {
+        const signupRes = await apiFetch("/api/auth/signup", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name, email, password }),

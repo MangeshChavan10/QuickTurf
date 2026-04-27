@@ -1,3 +1,4 @@
+import { apiFetch } from "../../lib/api";
 import { useEffect, useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { AdminLayout } from "../../components/AdminLayout";
@@ -20,7 +21,7 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/admin/analytics", { headers: { Authorization: `Bearer ${token}` } })
+    apiFetch("/api/admin/analytics", { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json())
       .then(d => setData(d))
       .catch(console.error)

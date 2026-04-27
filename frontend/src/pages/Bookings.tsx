@@ -1,3 +1,4 @@
+import { apiFetch } from "../lib/api";
 import { Header, Footer } from "../components/Navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { Calendar, Clock, MapPin, ChevronRight, IndianRupee, CheckCircle2, XCircle, AlertTriangle, Star, MessageSquare } from "lucide-react";
@@ -26,7 +27,7 @@ export default function Bookings() {
       return;
     }
 
-    fetch(`/api/bookings?email=${user.email}`)
+    apiFetch(`/api/bookings?email=${user.email}`)
       .then(res => res.json())
       .then(data => {
         setMyBookings(data);
@@ -41,7 +42,7 @@ export default function Bookings() {
   const handleCancel = async (bookingId: string) => {
     setCancellingId(bookingId);
     try {
-      const res = await fetch(`/api/bookings/${bookingId}/cancel`, { method: 'POST' });
+      const res = await apiFetch(`/api/bookings/${bookingId}/cancel`, { method: 'POST' });
       const data = await res.json();
       if (res.ok) {
         setMyBookings(prev => prev.map(b =>
@@ -66,7 +67,7 @@ export default function Bookings() {
 
     try {
       // 1. Submit review to Turf
-      const reviewRes = await fetch(`/api/turfs/${reviewingBooking.turfId._id || reviewingBooking.turfId.id}/reviews`, {
+      const reviewRes = await apiFetch(`/api/turfs/${reviewingBooking.turfId._id || reviewingBooking.turfId.id}/reviews`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -79,7 +80,7 @@ export default function Bookings() {
       if (!reviewRes.ok) throw new Error("Failed to submit review");
 
       // 2. Mark booking as reviewed
-      const markRes = await fetch(`/api/bookings/${reviewingBooking._id}/reviewed`, {
+      const markRes = await apiFetch(`/api/bookings/${reviewingBooking._id}/reviewed`, {
         method: "PUT"
       });
 

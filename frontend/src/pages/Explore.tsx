@@ -1,3 +1,4 @@
+import { apiFetch } from "../lib/api";
 import { Map as MapIcon, Star, Heart, SlidersHorizontal, CreditCard, Droplets, Layers, Menu, X, List, Search } from "lucide-react";
 import { Header, Footer } from "../components/Navigation";
 import { Link } from "react-router-dom";
@@ -19,7 +20,7 @@ export default function Explore() {
     };
     window.addEventListener("mousemove", handleMouseMove);
     
-    fetch("/api/turfs")
+    apiFetch("/api/turfs")
       .then(res => res.json())
       .then(data => {
         setTurfs(data);

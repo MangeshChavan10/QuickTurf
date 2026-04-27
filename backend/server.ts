@@ -194,7 +194,7 @@ const getRazorpay = () => {
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = parseInt(process.env.PORT || '3000');
 
   // Setup Multer Storage
   const storage = multer.diskStorage({
@@ -214,6 +214,25 @@ async function startServer() {
 
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
+
+  // ── CORS — allow Vercel frontend + local dev ──
+  const ALLOWED_ORIGINS = [
+    'http://localhost:5173',
+    'http://localhost:4173',
+    process.env.FRONTEND_URL || '',
+  ].filter(Boolean);
+  app.use((req: any, res: any, next: any) => {
+    const origin = req.headers.origin;
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin || '*');
+    }
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    if (req.method === 'OPTIONS') return res.sendStatus(204);
+    next();
+  });
+
   app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
 
   // ================= ADMIN MIDDLEWARE =================

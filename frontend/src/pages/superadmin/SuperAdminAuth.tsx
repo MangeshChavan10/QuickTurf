@@ -1,3 +1,4 @@
+import { apiFetch } from "../../lib/api";
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
@@ -17,7 +18,7 @@ export default function SuperAdminAuth() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/superadmin/login", {
+      const response = await apiFetch("/api/superadmin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })

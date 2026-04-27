@@ -1,3 +1,4 @@
+import { apiFetch } from "../lib/api";
 import { Header, Footer } from "../components/Navigation";
 import React, { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
@@ -27,7 +28,7 @@ export default function Login() {
     setError("");
 
     try {
-      const res = await fetch("/api/auth/login", {
+      const res = await apiFetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -57,7 +58,7 @@ export default function Login() {
       const isEmail = phone.includes("@");
       const payload = isEmail ? { email: phone } : { phone };
 
-      const res = await fetch("/api/auth/send-otp", {
+      const res = await apiFetch("/api/auth/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -90,7 +91,7 @@ export default function Login() {
       const isEmail = phone.includes("@");
       const payload = isEmail ? { email: phone, otp } : { phone, otp };
 
-      const res = await fetch("/api/auth/verify-otp", {
+      const res = await apiFetch("/api/auth/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

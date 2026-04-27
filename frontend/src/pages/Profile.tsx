@@ -1,3 +1,4 @@
+import { apiFetch } from "../lib/api";
 import { Header, Footer } from "../components/Navigation";
 import { motion } from "motion/react";
 import { useState, useEffect, type ReactNode } from "react";
@@ -42,7 +43,7 @@ export default function Profile() {
 
     setIsSaving(true);
     try {
-      const res = await fetch("/api/user/profile", {
+      const res = await apiFetch("/api/user/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: user?.email, name, phoneNumber: phone, newPassword: newPassword || undefined })

@@ -1,3 +1,4 @@
+import { apiFetch } from "../../lib/api";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
@@ -73,7 +74,7 @@ export default function Turfs() {
   };
 
   useEffect(() => {
-    fetch("/api/admin/turfs", { headers: { Authorization: `Bearer ${token}` } })
+    apiFetch("/api/admin/turfs", { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json())
       .then(d => setTurfs(d))
       .catch(console.error)

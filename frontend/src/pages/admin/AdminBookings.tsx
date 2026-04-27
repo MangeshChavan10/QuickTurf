@@ -1,3 +1,4 @@
+import { apiFetch } from "../../lib/api";
 import { useEffect, useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { AdminLayout } from "../../components/AdminLayout";
@@ -11,7 +12,7 @@ export default function AdminBookings() {
   useEffect(() => {
     const fetchBookings = async () => {
       try {
-        const res = await fetch("/api/admin/bookings", {
+        const res = await apiFetch("/api/admin/bookings", {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (res.ok) {

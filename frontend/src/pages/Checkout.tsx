@@ -1,3 +1,4 @@
+import { apiFetch } from "../lib/api";
 import { Header, Footer } from "../components/Navigation";
 import { CreditCard, Lock, ChevronLeft, Star, Verified, Smartphone, QrCode, CheckCircle2, Loader2, IndianRupee } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
@@ -52,7 +53,7 @@ export default function Checkout() {
     setIsProcessing(true);
     
     try {
-      const response = await fetch("/api/create-payment-intent", {
+      const response = await apiFetch("/api/create-payment-intent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -67,7 +68,7 @@ export default function Checkout() {
 
       if (data.success) {
         const finalizeBooking = async (rzpPayload: any = null) => {
-          await fetch("/api/verify-payment", {
+          await apiFetch("/api/verify-payment", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({

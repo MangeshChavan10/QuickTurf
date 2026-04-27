@@ -1,3 +1,4 @@
+import { apiFetch } from "../../lib/api";
 import { useEffect, useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { AdminLayout } from "../../components/AdminLayout";
@@ -37,7 +38,7 @@ export default function AdminUsers() {
 
   const fetchCustomers = async () => {
     try {
-      const res = await fetch("/api/admin/customers", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await apiFetch("/api/admin/customers", { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) {
         const data = await res.json();
         // Fetch moderation status for each customer

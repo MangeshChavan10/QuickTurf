@@ -1,3 +1,4 @@
+import { apiFetch } from "../lib/api";
 import { useParams, useNavigate } from "react-router-dom";
 import { REVIEWS, Turf, Review } from "../mockData";
 import { Header, Footer } from "../components/Navigation";
@@ -38,7 +39,7 @@ export default function TurfDetail() {
     if (!reviewText.trim()) return;
 
     try {
-      const response = await fetch(`/api/turfs/${id}/reviews`, {
+      const response = await apiFetch(`/api/turfs/${id}/reviews`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -112,11 +113,11 @@ export default function TurfDetail() {
   };
   useEffect(() => {
     Promise.all([
-      fetch(`/api/turfs/${id}`).then(res => {
+      apiFetch(`/api/turfs/${id}`).then(res => {
         if (!res.ok) throw new Error("Turf not found");
         return res.json();
       }),
-      fetch(`/api/turfs/${id}/reviews`).then(res => res.json())
+      apiFetch(`/api/turfs/${id}/reviews`).then(res => res.json())
     ])
     .then(([turfData, reviewsData]) => {
       if (turfData.error) throw new Error(turfData.error);
@@ -166,7 +167,7 @@ export default function TurfDetail() {
       setIsAvailabilityLoading(true);
       try {
         const formattedDate = `${selectedDate.day} ${selectedDate.date} ${selectedDate.month}`;
-        const res = await fetch(`/api/turfs/${id}/availability?date=${encodeURIComponent(formattedDate)}`);
+        const res = await apiFetch(`/api/turfs/${id}/availability?date=${encodeURIComponent(formattedDate)}`);
         const data = await res.json();
         if (data.bookedSlots) {
           setBookedSlots(data.bookedSlots);

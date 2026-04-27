@@ -1,3 +1,4 @@
+import { apiFetch } from "../../lib/api";
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
@@ -36,7 +37,7 @@ export default function AddTurf() {
       formData.append("type", type);
       formData.append("image", imageFile);
 
-      const res = await fetch("/api/admin/turfs", {
+      const res = await apiFetch("/api/admin/turfs", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`

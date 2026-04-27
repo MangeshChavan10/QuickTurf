@@ -1,3 +1,4 @@
+import { apiFetch } from "../lib/api";
 import { Search, Layers, ShieldCheck, CheckCircle, Circle as SoccerBall, ArrowDown } from "lucide-react";
 import { Header, Footer } from "../components/Navigation";
 import { TurfCard } from "../components/TurfCard";
@@ -12,15 +13,15 @@ export default function Home() {
   useEffect(() => {
     // Only seed if database is empty or explicitly requested
     const checkAndSeed = async () => {
-      const res = await fetch("/api/turfs");
+      const res = await apiFetch("/api/turfs");
       const data = await res.json();
       if (data.length === 0) {
-        await fetch("/api/seed", {
+        await apiFetch("/api/seed", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ force: false })
         });
-        const freshRes = await fetch("/api/turfs");
+        const freshRes = await apiFetch("/api/turfs");
         const freshData = await freshRes.json();
         setTurfs(freshData.slice(0, 4));
       } else {

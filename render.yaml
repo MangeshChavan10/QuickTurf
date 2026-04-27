@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: quickturf-backend
+    env: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 3000
+      - key: FRONTEND_URL
+        value: https://quick-turf-q.vercel.app
+      # You must add the following variables in the Render dashboard:
+      # - MONGODB_URI
+      # - JWT_SECRET
+      # - SMTP_HOST
+      # - SMTP_PORT
+      # - SMTP_USER
+      # - SMTP_PASS
+      # - RAZORPAY_KEY_ID (optional)
+      # - RAZORPAY_KEY_SECRET (optional)
+      # - RAZORPAY_WEBHOOK_SECRET (optional)

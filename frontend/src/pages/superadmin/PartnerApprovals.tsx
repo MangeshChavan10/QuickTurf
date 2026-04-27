@@ -1,3 +1,4 @@
+import { apiFetch } from "../../lib/api";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
@@ -76,9 +77,9 @@ export default function SuperAdminDashboard() {
     setIsLoading(true);
     try {
       const [pRes, tRes, aRes] = await Promise.all([
-        fetch("/api/superadmin/partners", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("/api/superadmin/turfs", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("/api/superadmin/analytics", { headers: { Authorization: `Bearer ${token}` } })
+        apiFetch("/api/superadmin/partners", { headers: { Authorization: `Bearer ${token}` } }),
+        apiFetch("/api/superadmin/turfs", { headers: { Authorization: `Bearer ${token}` } }),
+        apiFetch("/api/superadmin/analytics", { headers: { Authorization: `Bearer ${token}` } })
       ]);
       if (pRes.ok) setPartners(await pRes.json());
       if (tRes.ok) setTurfs(await tRes.json());
