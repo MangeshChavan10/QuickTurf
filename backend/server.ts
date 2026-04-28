@@ -358,7 +358,7 @@ async function startServer() {
   app.get("/api/admin/bookings", authenticateAdmin, async (req: any, res: any) => {
     try {
       const turfs = await Turf.find({ ownerId: req.user._id });
-      const turfIds = turfs.map(t => t._id);
+      const turfIds = turfs.map(t => t._id.toString());
       const bookings = await Booking.find({ turfId: { $in: turfIds } }).sort({ createdAt: -1 });
       res.json(bookings);
     } catch (error) {
@@ -369,7 +369,7 @@ async function startServer() {
   app.get("/api/admin/analytics", authenticateAdmin, async (req: any, res: any) => {
     try {
       const turfs = await Turf.find({ ownerId: req.user._id });
-      const turfIds = turfs.map(t => t._id);
+      const turfIds = turfs.map(t => t._id.toString());
       const allBookings = await Booking.find({ turfId: { $in: turfIds } }).populate('turfId');
 
       const confirmed = allBookings.filter(b => b.status === 'Confirmed');
@@ -414,7 +414,7 @@ async function startServer() {
   app.get("/api/admin/customers", authenticateAdmin, async (req: any, res: any) => {
     try {
       const turfs = await Turf.find({ ownerId: req.user._id });
-      const turfIds = turfs.map(t => t._id);
+      const turfIds = turfs.map(t => t._id.toString());
       const bookings = await Booking.find({ turfId: { $in: turfIds }, status: 'Confirmed' });
 
       // Group bookings by userEmail
@@ -876,7 +876,7 @@ async function startServer() {
           turfObj.rating = Number((reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(2));
         } else {
           // Check if it's the mock ID and has reviews matching the string "1"
-          const mockReviews = await Review.find({ turfId: turfObj.id || turfObj._id.toString() });
+          const mockReviews = await Review.find({ turfId: turfObj._id.toString() });
           if (mockReviews.length > 0) {
             turfObj.reviewCount = mockReviews.length;
             turfObj.rating = Number((mockReviews.reduce((acc, r) => acc + r.rating, 0) / mockReviews.length).toFixed(2));
@@ -943,7 +943,7 @@ async function startServer() {
           turfObj.reviewCount = reviews.length;
           turfObj.rating = Number((reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(2));
         } else {
-          const mockReviews = await Review.find({ turfId: turfObj.id || turfObj._id.toString() });
+          const mockReviews = await Review.find({ turfId: turfObj._id.toString() });
           if (mockReviews.length > 0) {
             turfObj.reviewCount = mockReviews.length;
             turfObj.rating = Number((mockReviews.reduce((acc, r) => acc + r.rating, 0) / mockReviews.length).toFixed(2));
