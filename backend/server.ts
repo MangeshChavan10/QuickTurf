@@ -853,7 +853,7 @@ async function startServer() {
               "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&q=80&w=1200",
               "https://images.unsplash.com/photo-1589487391730-58f20eb2c308?auto=format&fit=crop&q=80&w=1200"
             ],
-            price: 1000,
+            price: 10,
             rating: realRating,
             reviewCount: realReviewCount,
             location: "Solapur",
@@ -922,7 +922,7 @@ async function startServer() {
               "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&q=80&w=1200",
               "https://images.unsplash.com/photo-1589487391730-58f20eb2c308?auto=format&fit=crop&q=80&w=1200"
             ],
-            price: 1000,
+            price: 10,
             rating: realRating,
             reviewCount: realReviewCount,
             location: "Solapur",
@@ -1478,7 +1478,7 @@ async function startServer() {
           "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&q=80&w=1200",
           "https://images.unsplash.com/photo-1589487391730-58f20eb2c308?auto=format&fit=crop&q=80&w=1200"
         ],
-        price: 1000, 
+        price: 10, 
         rating: 4.98, 
         reviewCount: 342, 
         location: "Civil Hospital Road, Solapur", 
