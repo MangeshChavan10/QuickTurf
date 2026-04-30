@@ -11,6 +11,9 @@ import nodemailer from "nodemailer";
 import multer from "multer";
 import fs from "fs";
 import cron from "node-cron";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
+import mongoSanitize from "express-mongo-sanitize";
 
 dotenv.config({ override: true });
 
@@ -213,8 +216,38 @@ async function startServer() {
   });
   const upload = multer({ storage });
 
-  app.use(express.json());
-  app.use(express.urlencoded({ extended: true }));
+  // ── Security: HTTP Headers ──
+  app.use(helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' } // allow serving images to frontend
+  }));
+
+  // ── Security: Rate Limiting ──
+  const generalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 200,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many requests. Please try again later.' },
+  });
+  const paymentLimiter = rateLimit({
+    windowMs: 10 * 60 * 1000, // 10 minutes
+    max: 20,
+    message: { error: 'Too many payment attempts. Please wait 10 minutes.' },
+  });
+  const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 15,
+    message: { error: 'Too many login attempts. Please try again later.' },
+  });
+  app.use('/api/', generalLimiter);
+  app.use('/api/payment-intent', paymentLimiter);
+  app.use('/api/auth', authLimiter);
+
+  app.use(express.json({ limit: '10kb' }));
+  app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+
+  // ── Security: NoSQL Injection Sanitization ──
+  app.use(mongoSanitize());
 
   // ── CORS — allow Vercel frontend + local dev ──
   const ALLOWED_ORIGINS = [
@@ -1095,6 +1128,44 @@ async function startServer() {
         return res.status(409).json({ error: "This cancellation is already being processed. Please wait." });
       }
 
+      // ── HARD BLOCK: No cancellations within 6 hours of start ──
+      // (Inline quick parse to avoid code duplication before full parseSlotTime is defined below)
+      const _quickParseDate = (dateStr: string, timeStr: string): Date => {
+        const startTime = (timeStr || '').split(' - ')[0].trim();
+        const friendlyDate = dateStr.match(/(\d{1,2})\s+([A-Z]{3})/i);
+        const months: Record<string, string> = {
+          JAN:'01',FEB:'02',MAR:'03',APR:'04',MAY:'05',JUN:'06',
+          JUL:'07',AUG:'08',SEP:'09',OCT:'10',NOV:'11',DEC:'12'
+        };
+        let resolvedDate: string;
+        if (dateStr === 'Today' || !dateStr) {
+          resolvedDate = new Date().toISOString().split('T')[0];
+        } else if (friendlyDate) {
+          const year = new Date().getFullYear();
+          resolvedDate = `${year}-${months[friendlyDate[2].toUpperCase()] || '01'}-${friendlyDate[1].padStart(2,'0')}`;
+        } else {
+          resolvedDate = dateStr;
+        }
+        const h12 = startTime.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+        const h24 = startTime.match(/^(\d{1,2}):(\d{2})$/);
+        if (h12) {
+          let hr = parseInt(h12[1]);
+          if (h12[3].toUpperCase() === 'PM' && hr !== 12) hr += 12;
+          if (h12[3].toUpperCase() === 'AM' && hr === 12) hr = 0;
+          return new Date(`${resolvedDate}T${String(hr).padStart(2,'0')}:${h12[2]}:00+05:30`);
+        } else if (h24) {
+          return new Date(`${resolvedDate}T${h24[1].padStart(2,'0')}:${h24[2]}:00+05:30`);
+        }
+        return new Date(NaN);
+      };
+      const _slotStart = _quickParseDate(booking.date, booking.time || '');
+      const _hoursLeft = isNaN(_slotStart.getTime())
+        ? 999
+        : (_slotStart.getTime() - Date.now()) / (1000 * 60 * 60);
+      if (_hoursLeft >= 0 && _hoursLeft < 6) {
+        return res.status(400).json({ error: "Cancellation not allowed within 6 hours of the booking start time." });
+      }
+
       // ── 12-hour refund window check ──
       // Parses date like "FRI 25 APR" and time like "10:00 PM" or "10:00 PM - 11:00 PM"
       const parseSlotTime = (dateStr: string, timeStr: string): Date => {
@@ -1139,7 +1210,7 @@ async function startServer() {
       const hoursUntilStart = isNaN(turfStartDate.getTime())
         ? 999  // Can't parse the time — allow cancellation
         : (turfStartDate.getTime() - Date.now()) / (1000 * 60 * 60);
-      const isWithinNoRefundWindow = hoursUntilStart < 12;
+      const isWithinNoRefundWindow = hoursUntilStart < 6;
       const refundAmount = isWithinNoRefundWindow ? 0 : Math.max(0, (booking.amount || 0) - PLATFORM_FEE);
 
       // ── Mark idempotency key + initiate cancellation atomically ──
