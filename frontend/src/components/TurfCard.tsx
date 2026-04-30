@@ -28,7 +28,7 @@ export function TurfCard({ turf }: { turf: any }) {
           </div>
         </div>
         <div className="flex items-center gap-1 bg-primary-container px-2 py-1 rounded-full">
-          <Star className="w-3 h-3 fill-primary text-primary" />
+          <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
           <span className="font-bold text-xs text-primary">{turf.rating}</span>
         </div>
       </div>

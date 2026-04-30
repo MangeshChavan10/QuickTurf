@@ -200,7 +200,7 @@ export default function TurfDetail() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-1">
-                  <Star className="w-4 h-4 fill-primary text-primary" />
+                  <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
                   <span className="font-bold text-sm">{turf.rating}</span>
                   <span className="text-secondary text-sm underline decoration-surface-container underline-offset-4 cursor-pointer">({turf.reviewCount} reviews)</span>
                 </div>
@@ -394,7 +394,7 @@ export default function TurfDetail() {
               <div className="pt-24 border-t border-surface-container">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
                   <div className="flex items-center gap-4">
-                    <Star className="w-8 h-8 fill-primary text-primary" />
+                    <Star className="w-8 h-8 fill-amber-500 text-amber-500" />
                     <h3 className="text-3xl font-serif">{turf.rating} <span className="text-secondary font-sans text-lg italic tracking-tight">• Verified Reviews</span></h3>
                   </div>
                   <button onClick={() => setIsReviewModalOpen(true)} className="px-8 py-3 rounded-full border border-surface-container font-bold text-sm tracking-widest uppercase hover:bg-surface-container transition-all">Write a Review</button>
@@ -414,7 +414,7 @@ export default function TurfDetail() {
                         </div>
                         <div className="flex gap-1 mt-4">
                           {[...Array(5)].map((_, i) => (
-                            <Star key={i} className={`w-4 h-4 ${i < r.rating ? 'fill-primary text-primary' : 'text-surface-container'}`} />
+                            <Star key={i} className={`w-4 h-4 ${i < r.rating ? 'fill-amber-500 text-amber-500' : 'text-surface-container'}`} />
                           ))}
                         </div>
                       </div>
@@ -536,7 +536,7 @@ export default function TurfDetail() {
                         onClick={() => setReviewRating(star)}
                         className="focus:outline-none transition-transform hover:scale-110 active:scale-95"
                       >
-                        <Star className={`w-8 h-8 ${star <= reviewRating ? 'fill-primary text-primary' : 'text-surface-container'}`} />
+                        <Star className={`w-8 h-8 ${star <= reviewRating ? 'fill-amber-500 text-amber-500' : 'text-surface-container'}`} />
                       </button>
                     ))}
                   </div>

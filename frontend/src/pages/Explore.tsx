@@ -138,7 +138,7 @@ export default function Explore() {
                       <p className="text-secondary text-xs md:text-sm font-bold mt-1 opacity-70">{turf.subLocation} • {turf.distance}</p>
                       <div className="flex items-center gap-1.5 mt-3">
                         <div className="flex items-center bg-primary-container text-primary px-2 py-0.5 rounded-full">
-                          <Star className="w-3 h-3 fill-primary" />
+                          <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
                           <span className="text-xs font-bold ml-1">4.9</span>
                         </div>
                         <span className="text-secondary text-[10px] font-bold uppercase tracking-widest opacity-60">124 Reviews</span>

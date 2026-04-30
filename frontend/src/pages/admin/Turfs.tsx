@@ -137,7 +137,7 @@ export default function Turfs() {
                   </div>
                   {turf.rating !== undefined && (
                     <div className="flex items-center gap-1.5 mt-2 text-sm font-bold text-on-background">
-                      <Star className="w-4 h-4 fill-primary text-primary" />
+                      <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
                       {turf.rating} <span className="text-secondary font-normal">({turf.reviewCount} reviews)</span>
                     </div>
                   )}

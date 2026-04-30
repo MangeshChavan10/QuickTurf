@@ -398,7 +398,7 @@ export default function Bookings() {
                         onClick={() => setReviewRating(star)}
                         className="focus:outline-none transition-transform hover:scale-110 active:scale-95"
                       >
-                        <Star className={`w-10 h-10 ${star <= reviewRating ? 'fill-primary text-primary' : 'text-surface-container'}`} />
+                        <Star className={`w-10 h-10 ${star <= reviewRating ? 'fill-amber-500 text-amber-500' : 'text-surface-container'}`} />
                       </button>
                     ))}
                   </div>

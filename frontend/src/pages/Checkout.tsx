@@ -225,7 +225,7 @@ export default function Checkout() {
                 <div className="absolute bottom-6 left-6 text-white">
                   <h3 className="font-serif font-bold text-xl md:text-2xl">{turf.name}</h3>
                   <div className="flex items-center gap-1.5 mt-1">
-                    <Star className="w-4 h-4 fill-primary text-primary" />
+                    <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
                     <span className="text-xs md:text-sm font-bold">{turf.rating} <span className="opacity-70 font-normal ml-1">({turf.reviewCount} total)</span></span>
                   </div>
                 </div>
