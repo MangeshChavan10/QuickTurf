@@ -329,7 +329,7 @@ export default function Bookings() {
                       );
                     }
 
-                    if (hoursLeft < 12) {
+                    if (hoursLeft >= 0 && hoursLeft < 6) {
                       return (
                         <motion.button
                           animate={shakingId === booking._id ? { x: [0, -8, 8, -6, 6, -4, 4, 0] } : {}}
@@ -339,7 +339,7 @@ export default function Bookings() {
                             setTimeout(() => setShakingId(null), 500);
                           }}
                           className="px-6 py-3 rounded-full border border-surface-container text-secondary/40 font-bold text-sm cursor-not-allowed select-none"
-                          title={hoursLeft <= 0 ? "This booking has already passed" : "No refund within 12 hours of start"}
+                          title={hoursLeft <= 0 ? "This booking has already passed" : "Cancellation not allowed within 6 hours of start"}
                         >Cancel</motion.button>
                       );
                     }

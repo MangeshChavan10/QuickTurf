@@ -36,7 +36,7 @@ export const TURFS: Turf[] = [
     name: "Match Point Turf",
     location: "Solapur",
     subLocation: "Besides Middle East Cafe, 14/1B, Hotagi Rd, opp. to Lokmat Press, Industrial Estate, Basaveshwar Nagar",
-    price: 1000,
+    price: 10,
     rating: 4.98,
     reviewCount: 342,
     distance: "1.2 km away",

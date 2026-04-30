@@ -155,6 +155,22 @@ export default function TurfDetail() {
     "Evening & Night": ["06:00 PM", "07:00 PM", "08:00 PM", "09:00 PM", "10:00 PM", "11:00 PM"]
   };
 
+  // Returns true if a given slot time on the selectedDate is already in the past
+  const isSlotPassed = (slot: string): boolean => {
+    try {
+      const h12 = slot.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+      if (!h12) return false;
+      let hr = parseInt(h12[1]);
+      if (h12[3].toUpperCase() === 'PM' && hr !== 12) hr += 12;
+      if (h12[3].toUpperCase() === 'AM' && hr === 12) hr = 0;
+      const dateStr = `${selectedDate.fullDate.getFullYear()}-${String(selectedDate.fullDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.fullDate.getDate()).padStart(2, '0')}`;
+      const slotTime = new Date(`${dateStr}T${String(hr).padStart(2, '0')}:${h12[2]}:00+05:30`);
+      return slotTime.getTime() < Date.now();
+    } catch {
+      return false;
+    }
+  };
+
   const [selectedDate, setSelectedDate] = useState(DATES[0]);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
@@ -330,18 +346,22 @@ export default function TurfDetail() {
                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                           {slots.map(slot => {
                             const isBooked = bookedSlots.includes(slot);
+                            const isPassed = isSlotPassed(slot);
                             const isSelected = selectedSlot === slot;
                             return (
                               <button
                                 key={slot}
-                                disabled={isBooked}
+                                disabled={isBooked || isPassed}
                                 onClick={() => setSelectedSlot(slot)}
-                                className={`py-4 px-2 font-mono text-xs md:text-sm transition-all border rounded-none relative overflow-hidden ${isBooked
-                                    ? 'bg-surface-container/30 border-transparent text-secondary/30 cursor-not-allowed line-through decoration-secondary/20'
-                                    : isSelected
-                                      ? 'bg-on-background text-white border-on-background shadow-lg'
-                                      : 'bg-transparent border-surface-container text-on-background hover:border-on-background'
-                                  }`}
+                                className={`py-4 px-2 font-mono text-xs md:text-sm transition-all border rounded-none relative overflow-hidden ${
+                                  isPassed
+                                    ? 'bg-rose-50 border-rose-100 text-rose-300 cursor-not-allowed line-through decoration-rose-200'
+                                    : isBooked
+                                      ? 'bg-surface-container/30 border-transparent text-secondary/30 cursor-not-allowed line-through decoration-secondary/20'
+                                      : isSelected
+                                        ? 'bg-on-background text-white border-on-background shadow-lg'
+                                        : 'bg-transparent border-surface-container text-on-background hover:border-on-background'
+                                }`}
                               >
                                 <span className="relative z-10">{slot}</span>
                               </button>
@@ -364,6 +384,10 @@ export default function TurfDetail() {
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full bg-surface-container/50"></div>
                       <span className="text-[10px] font-bold uppercase tracking-widest text-secondary">Booked</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-rose-200"></div>
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-secondary">Passed</span>
                     </div>
                   </div>
                 </div>
