@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Search, Circle as SoccerBall, Menu, X, Lock, LogOut, User } from "lucide-react";
+import { Search, Circle as SoccerBall, Menu, X, Lock, LogOut, User, Bug } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "../contexts/AuthContext";
@@ -41,38 +41,38 @@ export function Header({ simplified = false }: { simplified?: boolean }) {
             <nav className="hidden lg:flex items-center gap-8">
               <Link 
                 to="/" 
-                className={`${isHome ? 'text-primary font-semibold border-b-2 border-primary pb-1' : 'text-secondary font-medium hover:text-primary'} transition-all font-sans relative group`}
+                className={`${isHome ? 'text-primary font-bold' : 'text-secondary font-medium hover:text-primary'} transition-all font-sans relative group py-1`}
               >
                 Home
-                {!isHome && <span className="absolute bottom-[-24px] left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full"></span>}
+                <span className={`absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-300 ${isHome ? 'w-full bg-primary' : 'w-0 group-hover:w-full bg-primary/50'}`}></span>
               </Link>
               <Link 
                 to="/explore" 
-                className={`${isExplore ? 'text-primary font-semibold border-b-2 border-primary pb-1' : 'text-secondary font-medium hover:text-primary'} transition-all font-sans relative group`}
+                className={`${isExplore ? 'text-primary font-bold' : 'text-secondary font-medium hover:text-primary'} transition-all font-sans relative group py-1`}
               >
                 Explore
-                {!isExplore && <span className="absolute bottom-[-24px] left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full"></span>}
+                <span className={`absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-300 ${isExplore ? 'w-full bg-primary' : 'w-0 group-hover:w-full bg-primary/50'}`}></span>
               </Link>
               <Link 
                 to="/about" 
-                className={`${isAbout ? 'text-primary font-semibold border-b-2 border-primary pb-1' : 'text-secondary font-medium hover:text-primary'} transition-all font-sans relative group`}
+                className={`${isAbout ? 'text-primary font-bold' : 'text-secondary font-medium hover:text-primary'} transition-all font-sans relative group py-1`}
               >
                 About
-                {!isAbout && <span className="absolute bottom-[-24px] left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full"></span>}
+                <span className={`absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-300 ${isAbout ? 'w-full bg-primary' : 'w-0 group-hover:w-full bg-primary/50'}`}></span>
               </Link>
               <Link 
                 to="/help" 
-                className={`${isHelp ? 'text-primary font-semibold border-b-2 border-primary pb-1' : 'text-secondary font-medium hover:text-primary'} transition-all font-sans relative group`}
+                className={`${isHelp ? 'text-primary font-bold' : 'text-secondary font-medium hover:text-primary'} transition-all font-sans relative group py-1`}
               >
                 Help
-                {!isHelp && <span className="absolute bottom-[-24px] left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full"></span>}
+                <span className={`absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-300 ${isHelp ? 'w-full bg-primary' : 'w-0 group-hover:w-full bg-primary/50'}`}></span>
               </Link>
               <Link 
                 to="/bookings" 
-                className={`${isBookings ? 'text-primary font-semibold border-b-2 border-primary pb-1' : 'text-secondary font-medium hover:text-primary'} transition-all font-sans relative group`}
+                className={`${isBookings ? 'text-primary font-bold' : 'text-secondary font-medium hover:text-primary'} transition-all font-sans relative group py-1`}
               >
                 My Bookings
-                {!isBookings && <span className="absolute bottom-[-24px] left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full"></span>}
+                <span className={`absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-300 ${isBookings ? 'w-full bg-primary' : 'w-0 group-hover:w-full bg-primary/50'}`}></span>
               </Link>
             </nav>
 
@@ -199,12 +199,20 @@ export function Footer() {
           </Link>
           <p className="text-sm text-secondary text-center md:text-left">© 2026 QuickTurf Solapur. Effortless turf booking.</p>
         </div>
-        <div className="flex flex-wrap justify-center gap-6">
-          <Link className="text-sm text-secondary hover:text-primary underline" to="/about">About Us</Link>
-          <Link className="text-sm text-secondary hover:text-primary underline" to="/help">FAQ & Support</Link>
-          <Link className="text-sm text-secondary hover:text-primary underline" to="/explore">Explore Venues</Link>
-          <a className="text-sm text-secondary hover:text-primary underline" href="#">Contact Us</a>
-          <a className="text-sm text-rose-500 font-medium hover:text-rose-600 underline flex items-center gap-1" href="mailto:support@quickturf.in?subject=Bug Report">Report a Bug</a>
+        <div className="flex flex-wrap justify-center gap-8">
+          <Link className="text-sm font-medium text-secondary hover:text-primary transition-colors" to="/about">About Us</Link>
+          <Link className="text-sm font-medium text-secondary hover:text-primary transition-colors" to="/help">FAQ & Support</Link>
+          <Link className="text-sm font-medium text-secondary hover:text-primary transition-colors" to="/explore">Explore Venues</Link>
+          <Link className="text-sm font-medium text-secondary hover:text-primary transition-colors" to="/help">Contact Us</Link>
+          <a 
+            className="text-sm text-rose-500 font-bold hover:text-rose-600 transition-colors flex items-center gap-1.5 px-3 py-1 bg-rose-50 hover:bg-rose-100 rounded-full" 
+            href="https://mail.google.com/mail/?view=cm&fs=1&to=support@quickturf.in&su=Bug%20Report%20-%20QuickTurf" 
+            target="_blank" 
+            rel="noopener noreferrer"
+          >
+            <Bug className="w-4 h-4" />
+            Report a Bug
+          </a>
         </div>
       </div>
     </footer>

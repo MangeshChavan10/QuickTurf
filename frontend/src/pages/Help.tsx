@@ -2,11 +2,9 @@ import { Header, Footer } from "../components/Navigation";
 import { Search, ChevronDown, Plus, Minus, MessageSquare, Phone, Mail, FileQuestion, Bot } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import Chatbot from "../components/Chatbot";
 
 export default function Help() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
-  const [isChatbotOpen, setIsChatbotOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
   const allFaqs = [
@@ -114,7 +112,7 @@ export default function Help() {
                     <h3 className="text-2xl font-serif font-bold text-on-background mb-2">No results found</h3>
                     <p className="text-secondary mb-8">We couldn't find any FAQs matching your search.</p>
                     <button 
-                      onClick={() => setIsChatbotOpen(true)}
+                      onClick={() => document.dispatchEvent(new CustomEvent('open-chatbot'))}
                       className="bg-on-background text-white px-8 py-4 rounded-full font-bold hover:bg-primary transition-all shadow-xl flex items-center gap-2 mx-auto"
                     >
                       <Bot className="w-5 h-5" />
@@ -132,7 +130,7 @@ export default function Help() {
                   <h3 className="text-2xl font-serif font-bold mb-6">Can't find what you need?</h3>
                   <div className="space-y-6">
                      <div 
-                        onClick={() => setIsChatbotOpen(true)}
+                        onClick={() => document.dispatchEvent(new CustomEvent('open-chatbot'))}
                         className="flex items-center gap-4 group cursor-pointer"
                      >
                         <div className="p-3 bg-white/10 rounded-2xl text-primary group-hover:bg-primary group-hover:text-white transition-all shadow-lg"><Bot className="w-6 h-6" /></div>
@@ -158,7 +156,6 @@ export default function Help() {
       </main>
 
       <Footer />
-      <Chatbot initialOpen={isChatbotOpen} />
     </div>
   );
 }

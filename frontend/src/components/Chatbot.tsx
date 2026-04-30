@@ -49,6 +49,9 @@ export default function Chatbot({ initialOpen = false }: ChatbotProps) {
     if (initialOpen) {
       setIsOpen(true);
     }
+    const handleOpen = () => setIsOpen(true);
+    document.addEventListener('open-chatbot', handleOpen);
+    return () => document.removeEventListener('open-chatbot', handleOpen);
   }, [initialOpen]);
   const [messages, setMessages] = useState<Message[]>([
     { role: "bot", text: "Hi! I'm your QuickTurf assistant. How can I help you regarding our venues or policies today?" }

@@ -15,6 +15,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ProtectedRoute, AdminRoute, SuperAdminRoute } from "./components/ProtectedRoute";
+import Chatbot from "./components/Chatbot";
 
 import AdminAuth from "./pages/admin/AdminAuth";
 import Dashboard from "./pages/admin/Dashboard";
@@ -78,6 +79,7 @@ export default function App() {
           </Routes>
         </Router>
       </AuthProvider>
+      <Chatbot />
     </>
   );
 }

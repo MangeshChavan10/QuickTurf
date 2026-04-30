@@ -84,6 +84,7 @@ const turfSchema = new mongoose.Schema({
 const bookingSchema = new mongoose.Schema({
   turfId: { type: String, required: true },
   orderId: { type: String, required: true },
+  paymentId: { type: String, default: null },
   amount: { type: Number, required: true },
   status: { type: String, default: 'Confirmed' }, // Confirmed | Pending | Cancelled
   date: { type: String, required: true },
@@ -1414,12 +1415,33 @@ async function startServer() {
   });
 
   app.post("/api/verify-payment", async (req, res) => {
-    const { orderId, amount, turfId, date, time, userEmail } = req.body;
+    const { orderId, amount, turfId, date, time, userEmail, rzpPayload } = req.body;
     
     try {
+      const key_secret = process.env.RAZORPAY_KEY_SECRET;
+
+      // STRICT SECURITY: If Razorpay is configured on the backend, we MUST verify the cryptographic signature.
+      if (key_secret) {
+        if (!rzpPayload || !rzpPayload.razorpay_signature || !rzpPayload.razorpay_payment_id) {
+          console.error("Missing Razorpay payload in production mode.");
+          return res.status(400).json({ success: false, error: "Payment verification failed: Missing Razorpay payload" });
+        }
+
+        const crypto = await import('crypto');
+        const generatedSignature = crypto.default
+          .createHmac('sha256', key_secret)
+          .update(orderId + "|" + rzpPayload.razorpay_payment_id)
+          .digest('hex');
+
+        if (generatedSignature !== rzpPayload.razorpay_signature) {
+          console.error("Invalid Razorpay signature mismatch.");
+          return res.status(400).json({ success: false, error: "Payment verification failed: Invalid signature" });
+        }
+      }
+
       const updatedBooking = await Booking.findOneAndUpdate(
         { orderId },
-        { status: 'Confirmed' },
+        { status: 'Confirmed', paymentId: rzpPayload?.razorpay_payment_id || 'SIMULATED' },
         { new: true }
       );
       
@@ -1429,7 +1451,7 @@ async function startServer() {
       
       res.json({ success: true });
     } catch (error) {
-      console.error("Booking error:", error);
+      console.error("Booking verification error:", error);
       res.status(500).json({ success: false });
     }
   });

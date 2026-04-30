@@ -1,11 +1,11 @@
 import { apiFetch } from "../lib/api";
-import { Search, Layers, ShieldCheck, CheckCircle, Circle as SoccerBall, ArrowDown } from "lucide-react";
+import { Search, Layers, ShieldCheck, CheckCircle, Circle as SoccerBall, ArrowDown, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Header, Footer } from "../components/Navigation";
 import { TurfCard } from "../components/TurfCard";
 import { motion } from "motion/react";
 import { useState, useEffect } from "react";
 import { Turf } from "../mockData";
-import { Link } from "react-router-dom";
 
 export default function Home() {
   const [turfs, setTurfs] = useState<Turf[]>([]);
@@ -186,10 +186,8 @@ export default function Home() {
                       <p className="text-secondary text-xs md:text-sm leading-relaxed font-medium opacity-70">{item.desc}</p>
                     </div>
                     {i < 2 && (
-                      <div className="hidden lg:block absolute top-1/2 -right-6 -translate-y-1/2 z-10">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-primary/20 rotate-0">
-                          <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
+                      <div className="hidden lg:block absolute top-[92px] -right-6 -translate-y-1/2 z-10">
+                        <ArrowRight className="w-8 h-8 text-primary/20" />
                       </div>
                     )}
                   </motion.div>
@@ -227,12 +225,12 @@ export default function Home() {
                 Picked by real players, rated honestly
               </p>
             </div>
-            <button className="flex items-center gap-4 px-8 py-4 rounded-full border border-surface-container hover:border-primary hover:bg-primary/5 transition-all group font-bold tracking-widest uppercase text-xs md:text-sm text-on-background">
+            <Link to="/explore" className="flex items-center gap-4 px-8 py-4 rounded-full border border-surface-container hover:border-primary hover:bg-primary/5 transition-all group font-bold tracking-widest uppercase text-xs md:text-sm text-on-background">
               Explore All
               <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors">
-                <span className="text-lg leading-none group-hover:translate-x-1 transition-transform">→</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </div>
-            </button>
+            </Link>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -268,14 +266,14 @@ export default function Home() {
               <Link to="/admin/register" className="flex items-center gap-4 bg-on-background text-white px-8 py-5 rounded-full font-bold w-fit hover:bg-primary transition-colors duration-300 shadow-xl shadow-on-background/10 group/btn">
                 List My Turf — It's Free
                 <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center group-hover/btn:translate-x-2 transition-transform">
-                  <span className="text-white leading-none">→</span>
+                  <ArrowRight className="w-4 h-4 text-white" />
                 </div>
               </Link>
             </div>
 
             <div className="relative h-[400px] lg:h-auto overflow-hidden pointer-events-none">
               <img
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
                 src="/images/turf-home.jpg"
                 alt="Match Point Turf Night View"
                 fetchPriority="high"
