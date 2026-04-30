@@ -169,31 +169,31 @@ export default function Home() {
                     icon: CheckCircle
                   }
                 ].map((item, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.2 }}
-                  className="relative group"
-                >
-                  <div className="bg-white p-8 md:p-10 rounded-[32px] md:rounded-[48px] border border-surface-container shadow-sm group-hover:shadow-xl transition-all h-full">
-                    <div className="w-14 h-14 md:w-16 md:h-16 bg-primary/10 rounded-2xl md:rounded-3xl flex items-center justify-center mx-auto mb-6 md:mb-8 group-hover:bg-primary transition-colors group-hover:rotate-6">
-                      <item.icon className="w-6 h-6 md:w-8 md:h-8 text-primary group-hover:text-white transition-colors" />
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.2 }}
+                    className="relative group"
+                  >
+                    <div className="bg-white p-8 md:p-10 rounded-[32px] md:rounded-[48px] border border-surface-container shadow-sm group-hover:shadow-xl transition-all h-full">
+                      <div className="w-14 h-14 md:w-16 md:h-16 bg-primary/10 rounded-2xl md:rounded-3xl flex items-center justify-center mx-auto mb-6 md:mb-8 group-hover:bg-primary transition-colors group-hover:rotate-6">
+                        <item.icon className="w-6 h-6 md:w-8 md:h-8 text-primary group-hover:text-white transition-colors" />
+                      </div>
+                      <span className="block text-accent font-black text-[10px] md:text-xs tracking-widest mb-3 md:mb-4">STEP {item.step}</span>
+                      <h3 className="text-xl md:text-2xl font-serif text-on-background mb-3 md:mb-4">{item.title}</h3>
+                      <p className="text-secondary text-xs md:text-sm leading-relaxed font-medium opacity-70">{item.desc}</p>
                     </div>
-                    <span className="block text-accent font-black text-[10px] md:text-xs tracking-widest mb-3 md:mb-4">STEP {item.step}</span>
-                    <h3 className="text-xl md:text-2xl font-serif text-on-background mb-3 md:mb-4">{item.title}</h3>
-                    <p className="text-secondary text-xs md:text-sm leading-relaxed font-medium opacity-70">{item.desc}</p>
-                  </div>
-                  {i < 2 && (
-                    <div className="hidden lg:block absolute top-1/2 -right-6 -translate-y-1/2 z-10">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-primary/20 rotate-0">
-                        <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </div>
-                  )}
-                </motion.div>
-              ))}
+                    {i < 2 && (
+                      <div className="hidden lg:block absolute top-1/2 -right-6 -translate-y-1/2 z-10">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-primary/20 rotate-0">
+                          <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </div>
+                    )}
+                  </motion.div>
+                ))}
             </div>
           </div>
         </section>
@@ -274,13 +274,13 @@ export default function Home() {
             </div>
 
             <div className="relative h-[400px] lg:h-auto overflow-hidden pointer-events-none">
-              <iframe
-                className="absolute top-1/2 left-1/2 w-[300%] h-[300%] lg:w-[150%] lg:h-[150%] -translate-x-1/2 -translate-y-1/2 transition-transform duration-1000 group-hover:scale-105"
-                src="https://www.youtube.com/embed/aTTOQtSOX3I?autoplay=1&mute=1&loop=1&playlist=aTTOQtSOX3I&controls=0&showinfo=0&rel=0&playsinline=1&modestbranding=1"
-                title="Turf host video"
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              ></iframe>
+              <img
+                className="w-full h-full object-cover"
+                src="/images/turf-home.jpg"
+                alt="Match Point Turf Night View"
+                fetchPriority="high"
+                decoding="async"
+              />
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
             </div>
           </div>
