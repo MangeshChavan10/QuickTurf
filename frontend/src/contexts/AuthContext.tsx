@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { apiFetch } from "../lib/api";
 
 export interface User {
   name: string;
@@ -43,18 +44,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       // Pro-sync: Fetch latest profile data from server to ensure name/etc is correct
-      fetch(`/api/user/profile?email=${encodeURIComponent(parsedUser.email)}`, {
+      apiFetch(`/api/user/profile?email=${encodeURIComponent(parsedUser.email)}`, {
         headers: { 'Authorization': `Bearer ${savedToken}` }
       })
-      .then(r => r.json())
-      .then(data => {
-        if (data && !data.error) {
-          const freshUser = { ...parsedUser, ...data };
-          setUser(freshUser);
-          localStorage.setItem("qt_user", JSON.stringify(freshUser));
+      .then(async r => {
+        if (!r.ok) return; // non-200 means backend not reachable — skip silently
+        const text = await r.text();
+        try {
+          const data = JSON.parse(text);
+          if (data && !data.error) {
+            const freshUser = { ...parsedUser, ...data };
+            setUser(freshUser);
+            localStorage.setItem("qt_user", JSON.stringify(freshUser));
+          }
+        } catch {
+          // Response was HTML (e.g. 404 page) — ignore silently
         }
       })
-      .catch(err => console.error("Profile sync failed:", err));
+      .catch(() => { /* Network error — keep cached user */ });
     }
     setIsLoading(false);
   }, []);
