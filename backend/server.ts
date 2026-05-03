@@ -27,7 +27,7 @@ const mongoURI = process.env.MONGODB_URI;
 if (mongoURI) {
   mongoose.connect(mongoURI)
     .then(() => console.log("Connected to MongoDB established"))
-    .catch(err => console.error("MongoDB connection error:", err));
+    .catch((err: any) => console.error("MongoDB connection error:", err));
 } else {
   console.warn("MONGODB_URI not found in environment. Database features will be disabled.");
 }
@@ -1420,7 +1420,7 @@ async function startServer() {
               </div>
             </div>
           `
-        }).catch(err => console.error('[Cancel] Email failed:', err));
+        }).catch((err: any) => console.error('[Cancel] Email failed:', err));
       }
 
       res.json({
@@ -1504,7 +1504,7 @@ async function startServer() {
                     </div>
                   </div>
                 `
-              }).catch(err => console.error('[Webhook] Refund email failed:', err));
+              }).catch((err: any) => console.error('[Webhook] Refund email failed:', err));
             }
           }
         }
