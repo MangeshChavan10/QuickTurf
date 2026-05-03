@@ -58,6 +58,22 @@ export default function Chatbot({ initialOpen = false }: ChatbotProps) {
   ]);
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatbotRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (chatbotRef.current && !chatbotRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isOpen]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -116,7 +132,7 @@ export default function Chatbot({ initialOpen = false }: ChatbotProps) {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-[100]">
+    <div className="fixed bottom-6 right-6 z-[100]" ref={chatbotRef}>
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -179,7 +195,7 @@ export default function Chatbot({ initialOpen = false }: ChatbotProps) {
                   onChange={(e) => setInput(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSend()}
                   placeholder="Ask me anything about QuickTurf..."
-                  className="w-full pl-4 pr-12 py-3 bg-surface-container/50 border border-transparent rounded-xl focus:border-primary focus:bg-white outline-none transition-all text-sm font-medium"
+                  className="w-full pl-4 pr-12 py-3 bg-surface-container/50 border border-transparent rounded-xl focus:border-primary focus:bg-black focus:text-white outline-none transition-all text-sm font-medium focus:shadow-[0_0_15px_rgba(0,163,108,0.4)]"
                 />
                 <button 
                   onClick={handleSend}

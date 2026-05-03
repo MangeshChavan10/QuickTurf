@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "../contexts/AuthContext";
-import { Mail, Lock, User, ArrowRight, AlertCircle, Smartphone, Key } from "lucide-react";
+import { Mail, Lock, User, Phone, ArrowRight, AlertCircle, Sparkles, Key, CheckCircle2 } from "lucide-react";
 
 type LoginType = "email" | "otp";
 
@@ -68,7 +68,7 @@ export default function Login() {
         if (data.otp) {
           setOtp(data.otp);
         }
-        setError(data.message || "OTP sent successfully!"); 
+        setError(""); 
       } else {
         setError(data.error || "Failed to send OTP");
       }
@@ -147,6 +147,20 @@ export default function Login() {
             </div>
           )}
 
+          {otpSent && !error && (
+            <div className="mb-6 p-4 bg-green-50 text-green-600 rounded-2xl flex items-center gap-3 text-sm font-bold border border-green-100">
+              <CheckCircle2 className="w-5 h-5" />
+              OTP sent successfully!
+            </div>
+          )}
+
+          {otpSent && !error && (
+            <div className="mb-6 p-4 bg-green-50 text-green-600 rounded-2xl flex items-center gap-3 text-sm font-bold border border-green-100">
+              <CheckCircle2 className="w-5 h-5" />
+              OTP sent to your email!
+            </div>
+          )}
+
           <AnimatePresence mode="wait">
             {loginType === "email" ? (
               <motion.form 
@@ -166,7 +180,7 @@ export default function Login() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="name@example.com"
-                      className="w-full pl-12 pr-4 py-4 bg-surface border border-surface-container rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none transition-all font-sans"
+                      className="w-full pl-12 pr-4 py-4 bg-surface border border-surface-container rounded-2xl focus:border-primary focus:bg-black focus:text-white focus:ring-4 focus:ring-primary/20 outline-none transition-all font-sans"
                     />
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-primary w-5 h-5 opacity-40" />
                   </div>
@@ -181,7 +195,7 @@ export default function Login() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full pl-12 pr-4 py-4 bg-surface border border-surface-container rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none transition-all font-sans"
+                      className="w-full pl-12 pr-4 py-4 bg-surface border border-surface-container rounded-2xl focus:border-primary focus:bg-black focus:text-white focus:ring-4 focus:ring-primary/20 outline-none transition-all font-sans"
                     />
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-primary w-5 h-5 opacity-40" />
                   </div>
@@ -225,7 +239,7 @@ export default function Login() {
                         value={emailForOtp}
                         onChange={(e) => setEmailForOtp(e.target.value)}
                         placeholder="name@example.com"
-                        className="w-full pl-12 pr-4 py-4 bg-surface border border-surface-container rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none transition-all font-sans"
+                        className="w-full pl-12 pr-4 py-4 bg-surface border border-surface-container rounded-2xl focus:border-primary focus:bg-black focus:text-white focus:ring-4 focus:ring-primary/20 outline-none transition-all font-sans"
                       />
                       <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-primary w-5 h-5 opacity-40" />
                     </div>
@@ -241,7 +255,7 @@ export default function Login() {
                         value={otp}
                         onChange={(e) => setOtp(e.target.value)}
                         placeholder="0 0 0 0 0 0"
-                        className="w-full pl-12 pr-4 py-4 bg-surface border border-surface-container rounded-2xl focus:ring-4 focus:ring-primary/10 tracking-[0.5em] text-center font-bold outline-none transition-all font-sans"
+                        className="w-full pl-12 pr-4 py-4 bg-surface border border-surface-container rounded-2xl focus:border-primary focus:bg-black focus:text-white focus:ring-4 focus:ring-primary/20 outline-none transition-all font-sans tracking-[0.5em] text-center font-bold"
                       />
                       <Key className="absolute left-4 top-1/2 -translate-y-1/2 text-primary w-5 h-5 opacity-40" />
                     </div>

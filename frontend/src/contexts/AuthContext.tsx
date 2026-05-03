@@ -41,6 +41,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (savedFavs) {
         setFavorites(JSON.parse(savedFavs));
       }
+
+      // Pro-sync: Fetch latest profile data from server to ensure name/etc is correct
+      fetch(`/api/user/profile?email=${encodeURIComponent(parsedUser.email)}`, {
+        headers: { 'Authorization': `Bearer ${savedToken}` }
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data && !data.error) {
+          const freshUser = { ...parsedUser, ...data };
+          setUser(freshUser);
+          localStorage.setItem("qt_user", JSON.stringify(freshUser));
+        }
+      })
+      .catch(err => console.error("Profile sync failed:", err));
     }
     setIsLoading(false);
   }, []);

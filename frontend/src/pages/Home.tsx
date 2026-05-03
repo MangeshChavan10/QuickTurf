@@ -138,6 +138,23 @@ export default function Home() {
             </motion.div>
           </motion.button>
         </section>
+        
+        {/* Ambient Marquee Ticker Strip */}
+        <section className="w-full border-t border-b border-surface-container h-[50px] flex items-center overflow-hidden bg-background pointer-events-none">
+          <div className="flex whitespace-nowrap animate-marquee">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="flex items-center text-[12px] font-medium uppercase tracking-[0.15em]" style={{ color: 'var(--ticker-text)' }}>
+                <span className="mx-4">Football</span> <span style={{ color: 'rgba(107,207,107,0.70)' }}>✦</span>
+                <span className="mx-4">Box Cricket</span> <span style={{ color: 'rgba(107,207,107,0.70)' }}>✦</span>
+                <span className="mx-4">Instant Booking</span> <span style={{ color: 'rgba(107,207,107,0.70)' }}>✦</span>
+                <span className="mx-4">Solapur</span> <span style={{ color: 'rgba(107,207,107,0.70)' }}>✦</span>
+                <span className="mx-4">Turf Details</span> <span style={{ color: 'rgba(107,207,107,0.70)' }}>✦</span>
+                <span className="mx-4">No Booking Fees</span> <span style={{ color: 'rgba(107,207,107,0.70)' }}>✦</span>
+                <span className="mx-4">Real-time Slots</span> <span style={{ color: 'rgba(107,207,107,0.70)' }}>✦</span>
+              </div>
+            ))}
+          </div>
+        </section>
 
         {/* How to Use Section: The Playbook */}
         <section id="how-to-use" className="bg-surface-container/30 py-24 scroll-mt-20">
@@ -186,7 +203,7 @@ export default function Home() {
                       <p className="text-secondary text-xs md:text-sm leading-relaxed font-medium opacity-70">{item.desc}</p>
                     </div>
                     {i < 2 && (
-                      <div className="hidden lg:flex absolute top-1/2 -right-6 -translate-y-1/2 z-10 items-center justify-center ml-4">
+                      <div className="hidden lg:flex absolute top-1/2 -right-6 -translate-y-1/2 z-10 items-center justify-center ml-[30px]">
                         <ArrowRight className="w-6 h-6 text-primary/40" />
                       </div>
                     )}

@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "../contexts/AuthContext";
-import { Mail, Lock, User, ArrowRight, AlertCircle, Sparkles, Key } from "lucide-react";
+import { Mail, Lock, User, Phone, ArrowRight, AlertCircle, Sparkles, Key, CheckCircle2 } from "lucide-react";
 
 export default function Signup() {
   const [name, setName] = useState("");
@@ -36,7 +36,7 @@ export default function Signup() {
         if (data.otp) {
           setOtp(data.otp);
         }
-        setError(data.message || "OTP sent successfully!"); // Using error state for status message temporarily or add new state
+        setError(""); 
       } else {
         setError(data.error || "Failed to send OTP");
       }
@@ -53,33 +53,20 @@ export default function Signup() {
     setError("");
 
     try {
-      // First verify OTP
-      const verifyRes = await apiFetch("/api/auth/verify-otp", {
+      // Direct signup call (which verifies OTP on backend)
+      const signupRes = await apiFetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, otp }),
+        body: JSON.stringify({ name, email, password, otp }),
       });
 
-      const verifyData = await verifyRes.json();
+      const signupData = await signupRes.json();
 
-      if (verifyRes.ok) {
-        // OTP verified, now create/update user with full details
-        const signupRes = await apiFetch("/api/auth/signup", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, email, password }),
-        });
-
-        const signupData = await signupRes.json();
-
-        if (signupRes.ok) {
-          login(signupData.user, signupData.token);
-          navigate("/");
-        } else {
-          setError(signupData.error || "Signup failed");
-        }
+      if (signupRes.ok) {
+        login(signupData.user, signupData.token);
+        navigate("/");
       } else {
-        setError(verifyData.error || "Invalid OTP");
+        setError(signupData.error || "Signup failed");
       }
     } catch (err) {
       setError("Something went wrong. Please try again.");
@@ -112,6 +99,13 @@ export default function Signup() {
             <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-2xl flex items-center gap-3 text-sm font-bold border border-red-100">
               <AlertCircle className="w-5 h-5" />
               {error}
+            </div>
+          )}
+
+          {otpSent && !error && (
+            <div className="mb-6 p-4 bg-green-50 text-green-600 rounded-2xl flex items-center gap-3 text-sm font-bold border border-green-100">
+              <CheckCircle2 className="w-5 h-5" />
+              OTP sent successfully!
             </div>
           )}
 

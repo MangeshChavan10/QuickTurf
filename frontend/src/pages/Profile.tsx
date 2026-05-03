@@ -11,7 +11,7 @@ export default function Profile() {
   const { user, updateUser, favorites } = useAuth();
   const navigate = useNavigate();
 
-  const [name, setName] = useState("");
+  const [name, setName] = useState(user?.name || "");
   const [phone, setPhone] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -25,12 +25,15 @@ export default function Profile() {
   useEffect(() => {
     if (!user) { navigate("/login"); return; }
     
-    // Fetch profile
-    fetch(`/api/user/profile?email=${encodeURIComponent(user.email)}`)
+    // Fetch latest profile to keep everything in sync
+    apiFetch(`/api/user/profile?email=${encodeURIComponent(user.email)}`)
       .then(r => r.json())
       .then(data => {
-        setName(data.name || "");
-        setPhone(data.phoneNumber || "");
+        if (data.name) {
+          setName(data.name);
+          updateUser({ name: data.name }); // Keep AuthContext in sync
+        }
+        if (data.phoneNumber) setPhone(data.phoneNumber);
       });
 
     // Fetch all turfs to filter saved ones
@@ -159,14 +162,14 @@ export default function Profile() {
                   value={newPassword}
                   onChange={e => setNewPassword(e.target.value)}
                   placeholder="New password"
-                  className="w-full px-4 py-3 rounded-2xl border border-surface-container bg-background text-sm font-medium focus:outline-none focus:border-primary transition-all"
+                  className="w-full px-4 py-3 rounded-2xl border border-surface-container bg-background text-sm font-medium focus:outline-none focus:border-primary focus:bg-black focus:text-white focus:ring-4 focus:ring-primary/20 transition-all"
                 />
                 <input
                   type="password"
                   value={confirmPassword}
                   onChange={e => setConfirmPassword(e.target.value)}
                   placeholder="Confirm new password"
-                  className="w-full px-4 py-3 rounded-2xl border border-surface-container bg-background text-sm font-medium focus:outline-none focus:border-primary transition-all"
+                  className="w-full px-4 py-3 rounded-2xl border border-surface-container bg-background text-sm font-medium focus:outline-none focus:border-primary focus:bg-black focus:text-white focus:ring-4 focus:ring-primary/20 transition-all"
                 />
               </div>
 
@@ -245,7 +248,7 @@ function Field({ icon, label, id, value, onChange, placeholder, type = "text", i
             value={value}
             onChange={e => onChange(e.target.value)}
             autoFocus
-            className="w-full text-sm font-semibold text-on-background bg-transparent border-none outline-none"
+            className="w-full text-sm font-semibold text-on-background bg-transparent border-none outline-none focus:bg-black focus:text-white px-2 py-1 rounded-lg transition-all"
             placeholder={placeholder}
           />
         ) : (
