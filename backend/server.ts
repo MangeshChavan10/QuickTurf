@@ -137,7 +137,9 @@ const getTransporter = () => {
 
     if (isGmail) {
       transporter = nodemailer.createTransport({
-        service: 'gmail',
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false, // Use STARTTLS on 587
         pool: true,
         maxConnections: 5,
         maxMessages: 100,
