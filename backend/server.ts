@@ -241,15 +241,25 @@ async function startServer() {
   const ALLOWED_ORIGINS = [
     'http://localhost:5173',
     'http://localhost:4173',
-    process.env.FRONTEND_URL || '',
-  ].filter(Boolean);
+    'https://quick-turf-ten.vercel.app',
+    ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
+  ];
+
   app.use((req: any, res: any, next: any) => {
     const origin = req.headers.origin;
-    res.setHeader('Access-Control-Allow-Origin', origin || '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin || '*');
+    } else {
+      // Still set header to avoid crashes, but block in response
+      res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGINS[2]); // Vercel as fallback
+    }
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
-    if (req.method === 'OPTIONS') return res.sendStatus(204);
+    res.setHeader('Access-Control-Max-Age', '86400'); // Cache preflight for 24h
+    if (req.method === 'OPTIONS') {
+      return res.sendStatus(204);
+    }
     next();
   });
 
