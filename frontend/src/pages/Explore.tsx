@@ -46,9 +46,9 @@ export default function Explore() {
     
     let matchesFilter = true;
     if (activeFilter === "Football") {
-      matchesFilter = turf.description.toLowerCase().includes("football") || turf.name.toLowerCase().includes("football");
+      matchesFilter = turf.type === "Football" || turf.type === "Both";
     } else if (activeFilter === "Cricket") {
-      matchesFilter = turf.description.toLowerCase().includes("cricket") || turf.name.toLowerCase().includes("cricket");
+      matchesFilter = turf.type === "Cricket" || turf.type === "Both";
     }
     // "All" or other filters don't strictly filter out in this mock
 
@@ -82,8 +82,7 @@ export default function Explore() {
                   { label: "All", icon: Layers },
                   { label: "Football", icon: "⚽" },
                   { label: "Cricket", icon: "🏏" },
-                  { label: "Price Range", icon: CreditCard },
-                  { label: "Amenities", icon: SlidersHorizontal }
+                  { label: "Price Range", icon: CreditCard }
                 ].map((filter, i) => (
                   <div
                     key={i}
@@ -139,9 +138,9 @@ export default function Explore() {
                       <div className="flex items-center gap-1.5 mt-3">
                         <div className="flex items-center bg-primary-container text-primary px-2 py-0.5 rounded-full">
                           <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
-                          <span className="text-xs font-bold ml-1">4.9</span>
+                          <span className="text-xs font-bold ml-1">{turf.rating ?? '4.9'}</span>
                         </div>
-                        <span className="text-secondary text-[10px] font-bold uppercase tracking-widest opacity-60">124 Reviews</span>
+                        <span className="text-secondary text-[10px] font-bold uppercase tracking-widest opacity-60">{turf.reviewCount ?? 0} Reviews</span>
                       </div>
                     </div>
                     <div className="text-right shrink-0">

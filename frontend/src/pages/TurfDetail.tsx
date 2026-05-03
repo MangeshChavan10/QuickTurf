@@ -171,8 +171,45 @@ export default function TurfDetail() {
     }
   };
 
+  const formatSlotRange = (slotsStr: string) => {
+    if (!slotsStr) return "";
+    const slots = slotsStr.split(',').map(s => s.trim()).sort((a, b) => {
+      const to24h = (t: string) => {
+        const m = t.match(/(\d+):(\d+)\s*(AM|PM)/i);
+        if (!m) return 0;
+        let hr = parseInt(m[1]);
+        if (m[3].toUpperCase() === 'PM' && hr !== 12) hr += 12;
+        if (m[3].toUpperCase() === 'AM' && hr === 12) hr = 0;
+        return hr * 60 + parseInt(m[2]);
+      };
+      return to24h(a) - to24h(b);
+    });
+    
+    if (slots.length <= 1) return slotsStr;
+    
+    const first = slots[0];
+    const last = slots[slots.length - 1];
+    
+    const formatTime = (t: string) => {
+      const m = t.match(/(\d+):(\d+)\s*(AM|PM)/i);
+      if (!m) return t;
+      return parseInt(m[1]) + " " + m[3].toUpperCase();
+    };
+    
+    const lastMatch = last.match(/(\d+):(\d+)\s*(AM|PM)/i);
+    let nextH = parseInt(lastMatch?.[1] || "0") + 1;
+    let nextAmpm = lastMatch?.[3]?.toUpperCase() || "";
+    if (nextH === 12) {
+      nextAmpm = nextAmpm === 'AM' ? 'PM' : 'AM';
+    } else if (nextH > 12) {
+      nextH = 1;
+    }
+    
+    return `${formatTime(first)} to ${nextH} ${nextAmpm}`;
+  };
+
   const [selectedDate, setSelectedDate] = useState(DATES[0]);
-  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+  const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
   const [isAvailabilityLoading, setIsAvailabilityLoading] = useState(false);
 
@@ -305,7 +342,7 @@ export default function TurfDetail() {
                           key={i}
                           onClick={() => {
                             setSelectedDate(dateObj);
-                            setSelectedSlot(null);
+                            setSelectedSlots([]);
                           }}
                           className={`flex-shrink-0 flex items-center justify-between px-4 py-3 transition-all border-b-2 md:border-b-0 md:border-l-2 ${isSelected
                               ? 'border-primary bg-primary/5 text-primary'
@@ -347,20 +384,26 @@ export default function TurfDetail() {
                           {slots.map(slot => {
                             const isBooked = bookedSlots.includes(slot);
                             const isPassed = isSlotPassed(slot);
-                            const isSelected = selectedSlot === slot;
+                            const isSelected = selectedSlots.includes(slot);
                             return (
                               <button
                                 key={slot}
                                 disabled={isBooked || isPassed}
-                                onClick={() => setSelectedSlot(slot)}
+                                onClick={() => {
+                                  setSelectedSlots(prev =>
+                                    prev.includes(slot)
+                                      ? prev.filter(t => t !== slot)
+                                      : [...prev, slot]
+                                  );
+                                }}
                                 className={`py-4 px-2 font-mono text-xs md:text-sm transition-all border rounded-none relative overflow-hidden ${
                                   isPassed
                                     ? 'bg-rose-50 border-rose-100 text-rose-300 cursor-not-allowed line-through decoration-rose-200'
                                     : isBooked
                                       ? 'bg-surface-container/30 border-transparent text-secondary/30 cursor-not-allowed line-through decoration-secondary/20'
                                       : isSelected
-                                        ? 'bg-on-background text-white border-on-background shadow-lg'
-                                        : 'bg-transparent border-surface-container text-on-background hover:border-on-background'
+                                        ? 'bg-on-background text-white border-on-background shadow-lg cursor-pointer'
+                                        : 'bg-transparent border-surface-container text-on-background hover:border-on-background cursor-pointer'
                                 }`}
                               >
                                 <span className="relative z-10">{slot}</span>
@@ -459,7 +502,7 @@ export default function TurfDetail() {
 
         {/* BookMyShow Style Fixed Bottom Bar */}
         <AnimatePresence>
-          {selectedSlot && (
+          {selectedSlots.length > 0 && (
             <motion.div
               initial={{ y: 100 }}
               animate={{ y: 0 }}
@@ -475,22 +518,22 @@ export default function TurfDetail() {
                   <div className="w-px h-10 bg-surface-container hidden sm:block"></div>
                   <div>
                     <p className="text-[10px] font-black text-secondary uppercase tracking-widest mb-1 opacity-60">Session</p>
-                    <p className="font-bold text-primary text-lg">{selectedDate.date} {selectedDate.month} • {selectedSlot}</p>
+                    <p className="font-bold text-primary text-lg">{selectedDate.date} {selectedDate.month} • {formatSlotRange(selectedSlots.join(", "))}</p>
                   </div>
                   <div className="w-px h-10 bg-surface-container hidden md:block"></div>
                   <div className="hidden md:block">
-                    <p className="text-[10px] font-black text-secondary uppercase tracking-widest mb-1 opacity-60">Investment</p>
-                    <p className="font-serif font-bold text-2xl text-on-background">₹{(turf.price + 350).toLocaleString()}</p>
+                    <p className="text-[10px] font-black text-secondary uppercase tracking-widest mb-1 opacity-60">Price</p>
+                    <p className="font-serif font-bold text-2xl text-on-background">₹{(turf.price * selectedSlots.length).toLocaleString()}</p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-4 w-full md:w-auto">
                   <div className="flex-1 md:hidden">
-                    <p className="text-[10px] font-black text-secondary uppercase tracking-widest mb-1 opacity-60">Total Cost</p>
-                    <p className="font-serif font-bold text-2xl text-on-background">₹{(turf.price + 350).toLocaleString()}</p>
+                    <p className="text-[10px] font-black text-secondary uppercase tracking-widest mb-1 opacity-60">Price</p>
+                    <p className="font-serif font-bold text-2xl text-on-background">₹{(turf.price * selectedSlots.length).toLocaleString()}</p>
                   </div>
                   <button
-                    onClick={() => navigate('/checkout', { state: { turf, selectedSlot, selectedDate: `${selectedDate.day} ${selectedDate.date} ${selectedDate.month}` } })}
+                    onClick={() => navigate('/checkout', { state: { turf, selectedSlot: selectedSlots.join(", "), selectedDate: `${selectedDate.day} ${selectedDate.date} ${selectedDate.month}` } })}
                     className="flex-[2] md:flex-none px-12 py-5 bg-accent text-white font-bold text-lg rounded-full shadow-2xl hover:brightness-110 active:scale-95 transition-all font-serif flex items-center justify-center gap-4 group"
                   >
                     Confirm Booking

@@ -83,7 +83,7 @@ export default function Help() {
                         onClick={() => setOpenIndex(openIndex === i ? null : i)}
                         className="w-full flex items-center justify-between p-6 text-left"
                       >
-                        <span className="font-serif font-bold text-lg md:text-xl text-on-background">{faq.q}</span>
+                        <span className="font-sans font-bold text-lg md:text-xl text-on-background">{faq.q}</span>
                         <div className={`p-2 rounded-full transition-all ${openIndex === i ? 'bg-primary text-white' : 'bg-surface-container text-secondary'}`}>
                           {openIndex === i ? <Minus className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
                         </div>

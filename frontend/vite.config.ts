@@ -21,7 +21,7 @@ export default defineConfig(({ mode }) => {
       hmr: process.env.DISABLE_HMR !== 'true',
       proxy: {
         '/api': {
-          target: 'https://api-node-quickturf.onrender.com',
+          target: env.VITE_API_URL || 'http://localhost:3000',
           changeOrigin: true,
         }
       }
