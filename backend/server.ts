@@ -762,14 +762,17 @@ async function startServer() {
         simulationReason = !mailTransporter ? "SMTP credentials missing" : "Phone identifier provided";
       }
 
-      // If simulated (credentials missing), log immediately
+      // Always log the OTP to the backend console to make local testing easier,
+      // especially if emails get caught in spam filters or delayed by SMTP.
+      console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+      console.log(`  📧 OTP FOR ${identifier}: ${otp}`);
       if (isSimulated) {
-        console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-        console.log(`  📧 SIMULATED OTP FOR ${identifier}: ${otp}`);
-        console.log(`  ⚠️  Reason: ${simulationReason}`);
-        console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
+        console.log(`  ⚠️  Status: Simulated (${simulationReason})`);
+      } else {
+        console.log(`  ✅  Status: Handed off to SMTP server`);
       }
-      
+      console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
+
       res.json({ 
         success: true, 
         message: "OTP sent successfully"
