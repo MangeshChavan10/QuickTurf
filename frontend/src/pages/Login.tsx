@@ -33,7 +33,10 @@ export default function Login() {
       const res = await apiFetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ 
+          email: email.trim().toLowerCase(), 
+          password 
+        }),
       });
 
       const data = await res.json();
@@ -74,7 +77,7 @@ export default function Login() {
       const res = await apiFetch("/api/auth/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: emailForOtp }),
+        body: JSON.stringify({ email: emailForOtp.trim().toLowerCase() }),
       });
 
       const data = await res.json();
@@ -105,7 +108,7 @@ export default function Login() {
       const res = await apiFetch("/api/auth/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: emailForOtp }),
+        body: JSON.stringify({ email: emailForOtp.trim().toLowerCase() }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -130,7 +133,10 @@ export default function Login() {
       const res = await apiFetch("/api/auth/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: emailForOtp, otp }),
+        body: JSON.stringify({ 
+          email: emailForOtp.trim().toLowerCase(), 
+          otp: otp.trim() 
+        }),
       });
 
       const data = await res.json();

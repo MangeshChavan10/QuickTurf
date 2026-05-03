@@ -248,11 +248,14 @@ async function startServer() {
 
   app.use((req: any, res: any, next: any) => {
     const origin = req.headers.origin;
-    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+    // Allow all Vercel subdomains and local dev
+    const isVercel = origin && origin.endsWith('.vercel.app');
+    const isLocal = origin && (origin.includes('localhost') || origin.includes('127.0.0.1'));
+    
+    if (!origin || isVercel || isLocal || ALLOWED_ORIGINS.includes(origin)) {
       res.setHeader('Access-Control-Allow-Origin', origin || '*');
     } else {
-      // Still set header to avoid crashes, but block in response
-      res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGINS[2]); // Vercel as fallback
+      res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGINS[2]);
     }
     res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With');
@@ -701,8 +704,12 @@ async function startServer() {
   app.post("/api/auth/send-otp", async (req, res) => {
     try {
       const { phone, email } = req.body;
-      const identifier = email || phone;
-      if (!identifier) return res.status(400).json({ error: "Email or Phone required" });
+      const identifier = (email || phone || "").toString().trim().toLowerCase();
+      
+      if (!identifier) {
+        console.warn("[OTP] Send-OTP failed: No identifier provided", req.body);
+        return res.status(400).json({ error: "Email or Phone required" });
+      }
 
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
       const expiresAt = new Date(Date.now() + 5 * 60000); // 5 minutes
@@ -710,7 +717,7 @@ async function startServer() {
       await Otp.findOneAndUpdate(
         { identifier },
         { otp, expiresAt },
-        { upsert: true, new: true }
+        { upsert: true, new: true, returnDocument: 'after' }
       );
 
       let isSimulated = false;
@@ -769,10 +776,18 @@ async function startServer() {
   app.post("/api/auth/verify-otp", async (req, res) => {
     try {
       const { phone, email, otp } = req.body;
-      const identifier = email || phone;
+      const identifier = (email || phone || "").toString().trim().toLowerCase();
+      
+      console.log(`[OTP] Verifying for: ${identifier} (OTP: ${otp})`);
+
+      if (!identifier || !otp) {
+        return res.status(400).json({ error: "Identifier and OTP required" });
+      }
+
       const otpRecord = await Otp.findOne({ identifier, otp });
 
       if (!otpRecord || otpRecord.expiresAt < new Date()) {
+        console.warn(`[OTP] Verification failed for ${identifier}. Record found: ${!!otpRecord}`);
         return res.status(400).json({ error: "Invalid or expired OTP" });
       }
 
@@ -850,12 +865,25 @@ async function startServer() {
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { email, password } = req.body;
-      const user = await User.findOne({ email });
-      if (!user) return res.status(400).json({ error: "Invalid credentials" });
+      if (!email || !password) return res.status(400).json({ error: "Email and password required" });
+      
+      const normalizedEmail = email.toString().trim().toLowerCase();
+      const user = await User.findOne({ email: normalizedEmail });
+      
+      if (!user) {
+        console.warn(`[Login] Failed: User not found for ${normalizedEmail}`);
+        return res.status(400).json({ error: "Invalid credentials" });
+      }
 
-      if (!user.password) return res.status(400).json({ error: "This account uses OTP login. Please sign in with your phone/email OTP." });
+      if (!user.password) {
+        return res.status(400).json({ error: "This account uses OTP login. Please sign in with your phone/email OTP." });
+      }
+      
       const isMatch = await bcrypt.compare(password, user.password as string);
-      if (!isMatch) return res.status(400).json({ error: "Invalid credentials" });
+      if (!isMatch) {
+        console.warn(`[Login] Failed: Password mismatch for ${normalizedEmail}`);
+        return res.status(400).json({ error: "Invalid credentials" });
+      }
 
       const token = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, { expiresIn: '30d' });
       res.json({ token, user: { name: user.name, email: user.email, role: user.role || 'user', isApproved: true } });
