@@ -1,6 +1,7 @@
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
+import dns from "node:dns";
 
 import dotenv from "dotenv";
 import Razorpay from "razorpay";
@@ -14,6 +15,9 @@ import cron from "node-cron";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import mongoSanitize from "express-mongo-sanitize";
+
+// Force IPv4 for external connections (Fixes ENETUNREACH for Gmail SMTP on Render)
+dns.setDefaultResultOrder('ipv4first');
 
 dotenv.config({ override: true });
 
