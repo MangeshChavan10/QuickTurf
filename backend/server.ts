@@ -728,21 +728,15 @@ async function startServer() {
         // Send email in the background to prevent Google's 2-4 second SMTP delay from freezing the UI
         mailTransporter.sendMail({
           from: `"QuickTurf" <${process.env.SMTP_USER}>`,
+          replyTo: process.env.SMTP_USER,
           to: email,
-          subject: "Your QuickTurf OTP",
-          text: `Your OTP for QuickTurf login is: ${otp}. Valid for 5 minutes.`,
-          html: `
-            <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px; max-width: 500px;">
-              <h2 style="color: #7D8B73;">QuickTurf Login</h2>
-              <p>Use the code below to sign in to your QuickTurf account:</p>
-              <div style="background: #f4f5f3; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 10px; color: #2A3428; border-radius: 8px; margin: 20px 0;">
-                ${otp}
-              </div>
-              <p style="color: #666; font-size: 12px;">This code expires in 5 minutes. If you didn't request this, please ignore this email.</p>
-            </div>
-          `
+          subject: "QuickTurf Login OTP",
+          text: `Your OTP for QuickTurf is: ${otp}`,
+          html: `<p>Your QuickTurf OTP is: <strong>${otp}</strong></p><p>This code expires in 5 minutes.</p>`
+        }).then((info) => {
+          console.log(`\n[OTP] 🚀 Google SMTP Accepted Email! Message ID: ${info.messageId}`);
         }).catch((mailError: any) => {
-          console.error("\n[OTP] Background mail send error:", mailError.message);
+          console.error("\n[OTP] ❌ Background mail send error:", mailError.message);
         });
       } else {
         isSimulated = true;
