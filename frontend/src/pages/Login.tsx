@@ -12,7 +12,7 @@ export default function Login() {
   const [loginType, setLoginType] = useState<LoginType>("email");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [phone, setPhone] = useState("");
+  const [emailForOtp, setEmailForOtp] = useState("");
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [error, setError] = useState("");
@@ -55,13 +55,10 @@ export default function Login() {
     setError("");
 
     try {
-      const isEmail = phone.includes("@");
-      const payload = isEmail ? { email: phone } : { phone };
-
       const res = await apiFetch("/api/auth/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ email: emailForOtp }),
       });
 
       const data = await res.json();
@@ -88,13 +85,10 @@ export default function Login() {
     setError("");
 
     try {
-      const isEmail = phone.includes("@");
-      const payload = isEmail ? { email: phone, otp } : { phone, otp };
-
       const res = await apiFetch("/api/auth/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ email: emailForOtp, otp }),
       });
 
       const data = await res.json();
@@ -223,17 +217,17 @@ export default function Login() {
               >
                 {!otpSent ? (
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-secondary ml-4">Phone or Email</label>
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-secondary ml-4">Email Address</label>
                     <div className="relative">
                       <input 
-                        type="text" 
+                        type="email" 
                         required
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        placeholder="email@example.com or +91..."
+                        value={emailForOtp}
+                        onChange={(e) => setEmailForOtp(e.target.value)}
+                        placeholder="name@example.com"
                         className="w-full pl-12 pr-4 py-4 bg-surface border border-surface-container rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none transition-all font-sans"
                       />
-                      <User className="absolute left-4 top-1/2 -translate-y-1/2 text-primary w-5 h-5 opacity-40" />
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-primary w-5 h-5 opacity-40" />
                     </div>
                   </div>
                 ) : (
@@ -256,7 +250,7 @@ export default function Login() {
                       onClick={() => setOtpSent(false)}
                       className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline ml-4 mt-2"
                     >
-                      Change Detail
+                      Change Email
                     </button>
                   </div>
                 )}

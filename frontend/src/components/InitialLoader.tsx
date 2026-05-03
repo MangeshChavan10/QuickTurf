@@ -26,7 +26,7 @@ export function InitialLoader({ onComplete }: { onComplete: () => void }) {
       initial={{ y: 0 }}
       exit={{ y: "-100%" }}
       transition={{ duration: 0.9, ease: [0.76, 0, 0.24, 1] }}
-      className="fixed inset-0 z-[100] bg-on-background flex flex-col items-center justify-center p-8 origin-top"
+      className="fixed inset-0 z-[100] bg-[#0a0f0a] flex flex-col items-center justify-center p-8 origin-top"
     >
       <div className="flex flex-col items-center justify-center relative w-full max-w-sm">
         <div className="overflow-hidden mb-12">

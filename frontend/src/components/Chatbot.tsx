@@ -126,21 +126,24 @@ export default function Chatbot({ initialOpen = false }: ChatbotProps) {
             className="mb-4 w-[350px] md:w-[400px] h-[500px] bg-white rounded-3xl shadow-2xl border border-surface-container flex flex-col overflow-hidden"
           >
             {/* Header */}
-            <div className="p-4 bg-on-background text-white flex items-center justify-between">
+            <div className="p-4 flex items-center justify-between" style={{background: 'linear-gradient(135deg, #0a1a0e 0%, #0f2a14 50%, #0a1a0e 100%)'}}>
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/20 rounded-full">
+                <div className="p-2 bg-primary/30 rounded-full ring-1 ring-primary/40">
                   <Bot className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <h4 className="font-bold text-sm">QuickTurf Assistant</h4>
-                  <p className="text-[10px] text-white/50 animate-pulse">Online • AI Powered</p>
+                  <h4 className="font-bold text-sm text-white">QuickTurf Assistant</h4>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+                    <p className="text-[10px] text-primary/80 font-bold uppercase tracking-widest">Online • AI Powered</p>
+                  </div>
                 </div>
               </div>
               <button 
                 onClick={() => setIsOpen(false)}
-                className="p-2 hover:bg-white/10 rounded-full transition-all"
+                className="p-2 hover:bg-white/10 rounded-full transition-all cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5 text-white" />
               </button>
             </div>
 

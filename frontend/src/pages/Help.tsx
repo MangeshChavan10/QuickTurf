@@ -125,7 +125,7 @@ export default function Help() {
 
             {/* Support Channels */}
             <div className="space-y-8">
-               <div className="bg-on-background rounded-[32px] p-8 text-white shadow-2xl relative overflow-hidden">
+               <div className="bg-[#141a14] rounded-[32px] p-8 text-white relative overflow-hidden">
                   <div className="absolute -top-10 -right-10 w-40 h-40 bg-primary/20 blur-[60px] rounded-full"></div>
                   <h3 className="text-2xl font-serif font-bold mb-6">Can't find what you need?</h3>
                   <div className="space-y-6">

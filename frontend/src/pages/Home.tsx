@@ -186,8 +186,8 @@ export default function Home() {
                       <p className="text-secondary text-xs md:text-sm leading-relaxed font-medium opacity-70">{item.desc}</p>
                     </div>
                     {i < 2 && (
-                      <div className="hidden lg:block absolute top-[92px] -right-6 -translate-y-1/2 z-10">
-                        <ArrowRight className="w-8 h-8 text-primary/20" />
+                      <div className="hidden lg:flex absolute top-1/2 -right-6 -translate-y-1/2 z-10 items-center justify-center">
+                        <ArrowRight className="w-6 h-6 text-primary/40" />
                       </div>
                     )}
                   </motion.div>
@@ -243,7 +243,7 @@ export default function Home() {
         </section>
 
         <section className="max-w-[1280px] mx-auto px-6 py-20 md:py-32 mb-20">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 rounded-[40px] md:rounded-[60px] overflow-hidden border border-surface-container shadow-2xl relative group bg-white">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 rounded-[40px] md:rounded-[60px] overflow-hidden border border-surface-container relative group bg-surface">
             <div className="p-10 md:p-20 flex flex-col justify-center z-10 relative">
               <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-bl-full -z-10 transition-transform duration-700 group-hover:scale-150"></div>
 
@@ -263,7 +263,7 @@ export default function Home() {
                 Own a turf in Solapur? List it for free and start getting bookings from local players today. We handle payments, scheduling, and everything in between — you just open the gates.
               </p>
 
-              <Link to="/admin/register" className="flex items-center gap-4 bg-on-background text-white px-8 py-5 rounded-full font-bold w-fit hover:bg-primary transition-colors duration-300 shadow-xl shadow-on-background/10 group/btn">
+              <Link to="/admin/register" className="flex items-center gap-4 bg-primary text-white px-8 py-5 rounded-full font-bold w-fit hover:brightness-110 transition-colors duration-300 group/btn cursor-pointer">
                 List My Turf — It's Free
                 <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center group-hover/btn:translate-x-2 transition-transform">
                   <ArrowRight className="w-4 h-4 text-white" />

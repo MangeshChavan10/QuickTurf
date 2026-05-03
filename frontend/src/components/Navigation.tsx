@@ -114,7 +114,7 @@ export function Header({ simplified = false }: { simplified?: boolean }) {
                   <div className="relative" ref={dropdownRef}>
                     <button
                       onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-                      className="flex items-center gap-2 px-4 py-2 bg-surface-container rounded-full border border-primary/10 hover:border-primary/40 hover:bg-primary/5 transition-all group"
+                      className="flex items-center gap-2 px-4 py-2 bg-surface-container rounded-full border border-primary/10 hover:border-primary/40 hover:bg-primary/5 transition-all group cursor-pointer"
                     >
                       <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
                         <span className="text-[10px] font-bold text-white">

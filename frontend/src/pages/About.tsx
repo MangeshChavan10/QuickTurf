@@ -125,7 +125,7 @@ export default function About() {
 
         {/* Local Partnership */}
         <section className="max-w-[1280px] mx-auto px-4 md:px-6 py-12">
-          <div className="bg-on-background rounded-[48px] p-8 md:p-20 flex flex-col md:flex-row items-center gap-12 text-white overflow-hidden relative">
+          <div className="bg-[#0a1a0e] rounded-[48px] p-8 md:p-20 flex flex-col md:flex-row items-center gap-12 text-white overflow-hidden relative shadow-2xl">
             <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 blur-[120px] rounded-full -translate-x-1/2"></div>
             <div className="flex-1 z-10">
               <h2 className="text-4xl md:text-5xl font-serif mb-6">Own a turf? Let's grow together.</h2>

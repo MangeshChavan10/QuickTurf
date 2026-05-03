@@ -223,7 +223,7 @@ export default function Checkout() {
 
         {/* Page Header */}
         <div className="flex items-center gap-4 mb-8">
-          <button onClick={() => navigate(-1)} className="p-3 hover:bg-surface-container rounded-full transition-all border border-transparent hover:border-surface-container active:scale-90">
+          <button onClick={() => navigate(-1)} className="p-3 hover:bg-surface-container rounded-full transition-all border border-transparent hover:border-surface-container active:scale-90 cursor-pointer">
             <ChevronLeft className="w-5 h-5 md:w-6 md:h-6 text-primary" />
           </button>
           <h1 className="text-3xl md:text-4xl font-serif text-black">Confirm Booking</h1>
