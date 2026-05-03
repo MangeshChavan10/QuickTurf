@@ -138,6 +138,9 @@ const getTransporter = () => {
     if (isGmail) {
       transporter = nodemailer.createTransport({
         service: 'gmail',
+        pool: true,
+        maxConnections: 5,
+        maxMessages: 100,
         auth: { user, pass }
       });
     } else {
@@ -145,10 +148,8 @@ const getTransporter = () => {
         host,
         port,
         secure: port === 465,
-        auth: { user, pass },
-        tls: {
-          rejectUnauthorized: false // Often needed for custom SMTP
-        }
+        pool: true,
+        auth: { user, pass }
       });
     }
 
@@ -716,39 +717,42 @@ async function startServer() {
       let simulationReason = "";
       const mailTransporter = getTransporter();
       if (email && mailTransporter) {
-        try {
-          await mailTransporter.sendMail({
-            from: `"QuickTurf" <${process.env.SMTP_USER}>`,
-            to: email,
-            subject: "Your QuickTurf OTP",
-            text: `Your OTP for QuickTurf login is: ${otp}. Valid for 5 minutes.`,
-            html: `
-              <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px; max-width: 500px;">
-                <h2 style="color: #7D8B73;">QuickTurf Login</h2>
-                <p>Use the code below to sign in to your QuickTurf account:</p>
-                <div style="background: #f4f5f3; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 10px; color: #2A3428; border-radius: 8px; margin: 20px 0;">
-                  ${otp}
-                </div>
-                <p style="color: #666; font-size: 12px;">This code expires in 5 minutes. If you didn't request this, please ignore this email.</p>
+        // Background the email sending so the user doesn't wait for SMTP latency
+        mailTransporter.sendMail({
+          from: `"QuickTurf" <${process.env.SMTP_USER}>`,
+          to: email,
+          subject: "Your QuickTurf OTP",
+          text: `Your OTP for QuickTurf login is: ${otp}. Valid for 5 minutes.`,
+          html: `
+            <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px; max-width: 500px;">
+              <h2 style="color: #7D8B73;">QuickTurf Login</h2>
+              <p>Use the code below to sign in to your QuickTurf account:</p>
+              <div style="background: #f4f5f3; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 10px; color: #2A3428; border-radius: 8px; margin: 20px 0;">
+                ${otp}
               </div>
-            `
-          });
-          console.log(`[EMAIL OTP] Sent to ${email}`);
-        } catch (mailError: any) {
-          console.error("Mail send error:", mailError.message);
-          isSimulated = true;
-          simulationReason = `Mail service error: ${mailError.message}`;
-        }
+              <p style="color: #666; font-size: 12px;">This code expires in 5 minutes. If you didn't request this, please ignore this email.</p>
+            </div>
+          `
+        }).then(() => {
+          console.log(`[EMAIL OTP] Successfully sent to ${email}`);
+        }).catch((mailError: any) => {
+          console.error("Mail send error (background):", mailError.message);
+          // Log the OTP to console as fallback if mail fails
+          console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+          console.log(`  📧 FALLBACK OTP FOR ${identifier}: ${otp}`);
+          console.log(`  ⚠️  Reason: Mail failed - ${mailError.message}`);
+          console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
+        });
       } else {
         isSimulated = true;
         simulationReason = !mailTransporter ? "SMTP credentials missing" : "Phone identifier provided";
       }
 
-      // Always log OTP to backend console for dev testing
+      // If simulated (credentials missing), log immediately
       if (isSimulated) {
         console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-        console.log(`  📧 OTP FOR ${identifier}: ${otp}`);
-        console.log(`  ⚠️  Simulation reason: ${simulationReason}`);
+        console.log(`  📧 SIMULATED OTP FOR ${identifier}: ${otp}`);
+        console.log(`  ⚠️  Reason: ${simulationReason}`);
         console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
       }
       
@@ -1353,7 +1357,8 @@ async function startServer() {
       }
       const mailer = getTransporter();
       if (mailer) {
-        await mailer.sendMail({
+        // Background the email
+        mailer.sendMail({
           from: `"QuickTurf" <${process.env.SMTP_USER}>`,
           to: booking.userEmail,
           subject: isWithinNoRefundWindow
@@ -1375,6 +1380,18 @@ async function startServer() {
                   ${isWithinNoRefundWindow
                     ? `<p style="margin:6px 0;color:#ef4444;"><strong>Refund:</strong> Not applicable (cancelled within 12 hours of start time)</p>`
                     : `<p style="margin:6px 0;color:#ef4444;"><strong>Platform Fee (non-refundable):</strong> − ₹${PLATFORM_FEE}</p>
+                       <p style="margin:6px 0;color:#059669;"><strong>Refund Initiated:</strong> ₹${refundAmount}</p>`
+                  }
+                </div>
+                <p style="color:#71717a;font-size:14px;line-height:1.6;">${isWithinNoRefundWindow 
+                  ? 'As per our policy, bookings cancelled within 12 hours of the start time are not eligible for a refund.' 
+                  : 'Your refund has been initiated through Razorpay and should reflect in your account within 5-7 business days.'}</p>
+                <p style="color:#a1a1aa;font-size:12px;margin-top:32px;">— The QuickTurf Team, Solapur</p>
+              </div>
+            </div>
+          `
+        }).catch(err => console.error('[Cancel] Email failed:', err));
+      }
                        <p style="margin:6px 0;color:#00A36C;font-size:18px;"><strong>Refund Amount:</strong> ₹${refundAmount}</p>`
                   }
                 </div>
@@ -1457,7 +1474,7 @@ async function startServer() {
             // Send "Refund confirmed" email
             const mailer = getTransporter();
             if (mailer) {
-              await mailer.sendMail({
+              mailer.sendMail({
                 from: `"QuickTurf" <${process.env.SMTP_USER}>`,
                 to: booking.userEmail,
                 subject: `✅ Your Refund of ₹${booking.refundedAmount} Has Been Processed`,
@@ -1473,7 +1490,7 @@ async function startServer() {
                     </div>
                   </div>
                 `
-              });
+              }).catch(err => console.error('[Webhook] Refund email failed:', err));
             }
           }
         }
