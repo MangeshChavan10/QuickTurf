@@ -123,45 +123,31 @@ const Review = mongoose.model('Review', reviewSchema);
 let transporter: any = null;
 const getTransporter = () => {
   if (!transporter) {
-    const host = process.env.SMTP_HOST;
+    const host = (process.env.SMTP_HOST || "").trim();
     const port = parseInt(process.env.SMTP_PORT || "465");
-    const user = process.env.SMTP_USER;
-    const pass = process.env.SMTP_PASS;
-
-    console.log(`[SMTP Debug] User: ${user}, Host: ${host}, Port: ${port}`);
-    if (pass) {
-      console.log(`[SMTP Debug] Pass Length: ${pass.length}, Starts with: ${pass.substring(0, 2)}..., Ends with: ...${pass.substring(pass.length-2)}`);
-    }
+    const user = (process.env.SMTP_USER || "").trim();
+    const pass = (process.env.SMTP_PASS || "").trim().replace(/\s/g, "");
 
     if (!user || !pass) {
       console.warn("SMTP credentials missing. Email OTP will be simulated in logs.");
       return null;
     }
 
-    const isGmail = host?.includes("gmail") || user?.endsWith("@gmail.com");
+    const isGmail = host.includes("gmail") || user.endsWith("@gmail.com");
 
     if (isGmail) {
       transporter = nodemailer.createTransport({
-        host: "smtp.gmail.com",
-        port: 587,
-        secure: false, // use STARTTLS (port 587)
-        auth: { 
-          user: user.trim(), 
-          pass: pass.trim().replace(/\s/g, "") 
-        },
-        tls: {
-          rejectUnauthorized: false
-        },
-        family: 4  // Force IPv4 to avoid ENETUNREACH on IPv6
-      } as any);
+        service: 'gmail',
+        auth: { user, pass }
+      });
     } else {
       transporter = nodemailer.createTransport({
         host,
         port,
         secure: port === 465,
-        auth: { user: user.trim(), pass: pass.trim() },
+        auth: { user, pass },
         tls: {
-          rejectUnauthorized: false
+          rejectUnauthorized: false // Often needed for custom SMTP
         }
       });
     }
@@ -310,7 +296,18 @@ async function startServer() {
   // ================= ADMIN ROUTES =================
   app.post("/api/admin/register", async (req, res) => {
     try {
-      const { name, email, password } = req.body;
+      const { name, email, password, otp } = req.body;
+      if (!name || !email || !password || !otp) {
+        return res.status(400).json({ error: "All fields including OTP are required." });
+      }
+
+      // Verify OTP first
+      const otpRecord = await Otp.findOne({ identifier: email, otp });
+      if (!otpRecord || otpRecord.expiresAt < new Date()) {
+        return res.status(400).json({ error: "Invalid or expired OTP. Please request a new one." });
+      }
+      await Otp.deleteOne({ _id: otpRecord._id });
+
       const existing = await User.findOne({ email });
       if (existing) return res.status(400).json({ error: "Email already exists" });
 
@@ -1155,8 +1152,8 @@ async function startServer() {
       const user = await User.findOne({ email });
       if (!user) return res.status(404).json({ error: "User not found" });
 
-      if (name) user.name = name;
-      if (phoneNumber) user.phoneNumber = phoneNumber;
+      if (name !== undefined) user.name = name;
+      if (phoneNumber !== undefined) user.phoneNumber = phoneNumber;
       if (newPassword && newPassword.length >= 6) {
         user.password = await bcrypt.hash(newPassword, 10);
       }
@@ -1177,8 +1174,13 @@ async function startServer() {
       const user = await User.findById(decoded.id);
       if (!user) return res.status(404).json({ error: "User not found" });
 
-      const identifier = user.email || user.phoneNumber || 'undefined';
-      const bookings = await Booking.find({ userEmail: identifier }).sort({ createdAt: -1 });
+      const identifiers = [];
+      if (user.email) identifiers.push(user.email);
+      if (user.phoneNumber) identifiers.push(user.phoneNumber);
+      
+      if (identifiers.length === 0) identifiers.push('undefined');
+
+      const bookings = await Booking.find({ userEmail: { $in: identifiers } }).sort({ createdAt: -1 });
       // Manually enrich each booking with turf data
       const enriched = await Promise.all(bookings.map(async (b) => {
         let turfData = null;
