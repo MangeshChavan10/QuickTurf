@@ -1,6 +1,6 @@
 import { apiFetch } from "../lib/api";
 import { Header, Footer } from "../components/Navigation";
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "../contexts/AuthContext";
@@ -17,6 +17,8 @@ export default function Login() {
   const [otpSent, setOtpSent] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [resendTimer, setResendTimer] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -49,6 +51,20 @@ export default function Login() {
     }
   };
 
+  const startResendTimer = () => {
+    setResendTimer(60);
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      setResendTimer(prev => {
+        if (prev <= 1) {
+          clearInterval(timerRef.current!);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -65,6 +81,7 @@ export default function Login() {
 
       if (res.ok) {
         setOtpSent(true);
+        startResendTimer();
         if (data.otp) {
           setOtp(data.otp);
         }
@@ -74,6 +91,31 @@ export default function Login() {
       }
     } catch (err) {
       setError("Failed to send OTP. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (resendTimer > 0 || isLoading) return;
+    setIsLoading(true);
+    setError("");
+    setOtp("");
+    try {
+      const res = await apiFetch("/api/auth/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: emailForOtp }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        startResendTimer();
+        setError("");
+      } else {
+        setError(data.error || "Failed to resend OTP");
+      }
+    } catch {
+      setError("Failed to resend OTP. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -259,13 +301,26 @@ export default function Login() {
                       />
                       <Key className="absolute left-4 top-1/2 -translate-y-1/2 text-primary w-5 h-5 opacity-40" />
                     </div>
-                    <button 
-                      type="button"
-                      onClick={() => setOtpSent(false)}
-                      className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline ml-4 mt-2"
-                    >
-                      Change Email
-                    </button>
+                    <div className="flex items-center justify-between mt-3 px-1">
+                      <button 
+                        type="button"
+                        onClick={() => setOtpSent(false)}
+                        className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline"
+                      >
+                        Change Email
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleResendOtp}
+                        disabled={resendTimer > 0 || isLoading}
+                        className="text-[10px] font-bold uppercase tracking-widest transition-all disabled:cursor-not-allowed"
+                        style={{ color: resendTimer > 0 ? 'var(--text-dimmed)' : '#6bcf6b' }}
+                      >
+                        {resendTimer > 0
+                          ? `Resend in ${resendTimer}s`
+                          : 'Resend OTP'}
+                      </button>
+                    </div>
                   </div>
                 )}
 
