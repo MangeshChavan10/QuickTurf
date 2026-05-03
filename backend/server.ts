@@ -1422,22 +1422,6 @@ async function startServer() {
           `
         }).catch(err => console.error('[Cancel] Email failed:', err));
       }
-                       <p style="margin:6px 0;color:#00A36C;font-size:18px;"><strong>Refund Amount:</strong> ₹${refundAmount}</p>`
-                  }
-                </div>
-                ${!isWithinNoRefundWindow
-                  ? `<p style="color:#71717a;font-size:14px;">Your refund of <strong>₹${refundAmount}</strong> has been <strong>initiated</strong> and will appear in your original payment method within <strong>5–7 business days</strong>. You will receive another email once the bank confirms the transfer.</p>`
-                  : `<p style="color:#71717a;font-size:14px;">Per our cancellation policy, no refund is issued for bookings cancelled within 12 hours of the start time.</p>`
-                }
-                <div style="background:#fef3c7;border-radius:8px;padding:12px 16px;margin-top:20px;border-left:4px solid #f59e0b;">
-                  <p style="margin:0;font-size:12px;color:#92400e;"><strong>⚠️ Disclaimer:</strong> Refund timelines depend on your bank and payment method. QuickTurf initiates the refund immediately, but settlement is handled by Razorpay and your bank. For disputes, contact support@quickturf.in.</p>
-                </div>
-                <p style="color:#a1a1aa;font-size:12px;margin-top:32px;">— The QuickTurf Team, Solapur</p>
-              </div>
-            </div>
-          `
-        });
-      }
 
       res.json({
         success: true,
