@@ -730,32 +730,33 @@ async function startServer() {
       let simulationReason = "";
       const mailTransporter = getTransporter();
       if (email && mailTransporter) {
-        // Background the email sending so the user doesn't wait for SMTP latency
-        mailTransporter.sendMail({
-          from: `"QuickTurf" <${process.env.SMTP_USER}>`,
-          to: email,
-          subject: "Your QuickTurf OTP",
-          text: `Your OTP for QuickTurf login is: ${otp}. Valid for 5 minutes.`,
-          html: `
-            <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px; max-width: 500px;">
-              <h2 style="color: #7D8B73;">QuickTurf Login</h2>
-              <p>Use the code below to sign in to your QuickTurf account:</p>
-              <div style="background: #f4f5f3; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 10px; color: #2A3428; border-radius: 8px; margin: 20px 0;">
-                ${otp}
+        try {
+          await mailTransporter.sendMail({
+            from: `"QuickTurf" <${process.env.SMTP_USER}>`,
+            to: email,
+            subject: "Your QuickTurf OTP",
+            text: `Your OTP for QuickTurf login is: ${otp}. Valid for 5 minutes.`,
+            html: `
+              <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px; max-width: 500px;">
+                <h2 style="color: #7D8B73;">QuickTurf Login</h2>
+                <p>Use the code below to sign in to your QuickTurf account:</p>
+                <div style="background: #f4f5f3; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 10px; color: #2A3428; border-radius: 8px; margin: 20px 0;">
+                  ${otp}
+                </div>
+                <p style="color: #666; font-size: 12px;">This code expires in 5 minutes. If you didn't request this, please ignore this email.</p>
               </div>
-              <p style="color: #666; font-size: 12px;">This code expires in 5 minutes. If you didn't request this, please ignore this email.</p>
-            </div>
-          `
-        }).then(() => {
+            `
+          });
           console.log(`[EMAIL OTP] Successfully sent to ${email}`);
-        }).catch((mailError: any) => {
-          console.error("Mail send error (background):", mailError.message);
-          // Log the OTP to console as fallback if mail fails
-          console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-          console.log(`  📧 FALLBACK OTP FOR ${identifier}: ${otp}`);
-          console.log(`  ⚠️  Reason: Mail failed - ${mailError.message}`);
-          console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
-        });
+        } catch (mailError: any) {
+          console.error("Mail send error:", mailError.message);
+          isSimulated = true;
+          simulationReason = `Mail service error: ${mailError.message}`;
+          
+          return res.status(500).json({ 
+            error: "Failed to deliver email. Please contact support or try again later." 
+          });
+        }
       } else {
         isSimulated = true;
         simulationReason = !mailTransporter ? "SMTP credentials missing" : "Phone identifier provided";
