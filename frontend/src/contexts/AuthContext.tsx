@@ -10,9 +10,11 @@ export interface User {
 interface AuthContextType {
   user: User | null;
   token: string | null;
+  favorites: string[];
   login: (userData: User, token: string) => void;
   logout: () => void;
   updateUser: (partial: Partial<User>) => void;
+  toggleFavorite: (turfId: string) => void;
   isLoading: boolean;
 }
 
@@ -21,15 +23,24 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [favorites, setFavorites] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Load user on mount
   useEffect(() => {
     const savedToken = localStorage.getItem("qt_token");
     const savedUser = localStorage.getItem("qt_user");
 
     if (savedToken && savedUser) {
+      const parsedUser = JSON.parse(savedUser);
       setToken(savedToken);
-      setUser(JSON.parse(savedUser));
+      setUser(parsedUser);
+      
+      // Load user-specific favorites
+      const savedFavs = localStorage.getItem(`qt_favorites_${parsedUser.email}`);
+      if (savedFavs) {
+        setFavorites(JSON.parse(savedFavs));
+      }
     }
     setIsLoading(false);
   }, []);
@@ -39,6 +50,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(authToken);
     localStorage.setItem("qt_token", authToken);
     localStorage.setItem("qt_user", JSON.stringify(userData));
+    
+    // Load favorites for this specific user
+    const savedFavs = localStorage.getItem(`qt_favorites_${userData.email}`);
+    setFavorites(savedFavs ? JSON.parse(savedFavs) : []);
   };
 
   const updateUser = (partial: Partial<User>) => {
@@ -50,15 +65,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const toggleFavorite = (turfId: string) => {
+    if (!user) {
+      alert("Please login to save your favorite turfs!");
+      return;
+    }
+
+    setFavorites(prev => {
+      const newFavs = prev.includes(turfId)
+        ? prev.filter(id => id !== turfId)
+        : [...prev, turfId];
+      localStorage.setItem(`qt_favorites_${user.email}`, JSON.stringify(newFavs));
+      return newFavs;
+    });
+  };
+
   const logout = () => {
     setUser(null);
     setToken(null);
+    setFavorites([]);
     localStorage.removeItem("qt_token");
     localStorage.removeItem("qt_user");
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, updateUser, isLoading }}>
+    <AuthContext.Provider value={{ user, token, favorites, login, logout, updateUser, toggleFavorite, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

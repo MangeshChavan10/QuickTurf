@@ -73,35 +73,35 @@ export function Header({ simplified = false }: { simplified?: boolean }) {
             <nav className="hidden lg:flex items-center gap-8">
               <Link 
                 to="/" 
-                className={`${isHome ? 'text-primary font-bold' : 'text-secondary font-bold hover:text-primary'} transition-all font-sans relative group py-1`}
+                className={`${isHome ? 'text-primary font-bold' : 'text-secondary font-bold hover:text-primary'} transition-all font-sans relative group py-1 text-xs uppercase tracking-widest`}
               >
                 Home
                 <span className={`absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-300 ${isHome ? 'w-full bg-primary' : 'w-0 group-hover:w-full bg-primary/50'}`}></span>
               </Link>
               <Link 
                 to="/explore" 
-                className={`${isExplore ? 'text-primary font-bold' : 'text-secondary font-bold hover:text-primary'} transition-all font-sans relative group py-1`}
+                className={`${isExplore ? 'text-primary font-bold' : 'text-secondary font-bold hover:text-primary'} transition-all font-sans relative group py-1 text-xs uppercase tracking-widest`}
               >
-                Explore
+                Venue
                 <span className={`absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-300 ${isExplore ? 'w-full bg-primary' : 'w-0 group-hover:w-full bg-primary/50'}`}></span>
               </Link>
               <Link 
                 to="/about" 
-                className={`${isAbout ? 'text-primary font-bold' : 'text-secondary font-bold hover:text-primary'} transition-all font-sans relative group py-1`}
+                className={`${isAbout ? 'text-primary font-bold' : 'text-secondary font-bold hover:text-primary'} transition-all font-sans relative group py-1 text-xs uppercase tracking-widest`}
               >
                 About
                 <span className={`absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-300 ${isAbout ? 'w-full bg-primary' : 'w-0 group-hover:w-full bg-primary/50'}`}></span>
               </Link>
               <Link 
                 to="/help" 
-                className={`${isHelp ? 'text-primary font-bold' : 'text-secondary font-bold hover:text-primary'} transition-all font-sans relative group py-1`}
+                className={`${isHelp ? 'text-primary font-bold' : 'text-secondary font-bold hover:text-primary'} transition-all font-sans relative group py-1 text-xs uppercase tracking-widest`}
               >
                 Help
                 <span className={`absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-300 ${isHelp ? 'w-full bg-primary' : 'w-0 group-hover:w-full bg-primary/50'}`}></span>
               </Link>
               <Link 
                 to="/bookings" 
-                className={`${isBookings ? 'text-primary font-bold' : 'text-secondary font-bold hover:text-primary'} transition-all font-sans relative group py-1`}
+                className={`${isBookings ? 'text-primary font-bold' : 'text-secondary font-bold hover:text-primary'} transition-all font-sans relative group py-1 text-xs uppercase tracking-widest`}
               >
                 My Bookings
                 <span className={`absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-300 ${isBookings ? 'w-full bg-primary' : 'w-0 group-hover:w-full bg-primary/50'}`}></span>
@@ -193,11 +193,11 @@ export function Header({ simplified = false }: { simplified?: boolean }) {
             className="lg:hidden bg-white border-b border-surface-container overflow-hidden"
           >
             <div className="px-6 py-8 flex flex-col gap-6 font-sans">
-              <Link to="/" onClick={() => setIsMenuOpen(false)} className="text-xl font-serif font-bold text-black">Home</Link>
-              <Link to="/explore" onClick={() => setIsMenuOpen(false)} className="text-xl font-serif font-bold text-black">Explore Turfs</Link>
-              <Link to="/about" onClick={() => setIsMenuOpen(false)} className="text-xl font-serif font-bold text-black">Our Philosophy</Link>
-              <Link to="/help" onClick={() => setIsMenuOpen(false)} className="text-xl font-serif font-bold text-black">Help Center</Link>
-              <Link to="/bookings" onClick={() => setIsMenuOpen(false)} className="text-xl font-serif font-bold text-black">My Bookings</Link>
+              <Link to="/" onClick={() => setIsMenuOpen(false)} className="text-xl font-serif font-bold text-black uppercase tracking-wider">Home</Link>
+              <Link to="/explore" onClick={() => setIsMenuOpen(false)} className="text-xl font-serif font-bold text-black uppercase tracking-wider">Venue</Link>
+              <Link to="/about" onClick={() => setIsMenuOpen(false)} className="text-xl font-serif font-bold text-black uppercase tracking-wider">About</Link>
+              <Link to="/help" onClick={() => setIsMenuOpen(false)} className="text-xl font-serif font-bold text-black uppercase tracking-wider">Help</Link>
+              <Link to="/bookings" onClick={() => setIsMenuOpen(false)} className="text-xl font-serif font-bold text-black uppercase tracking-wider">My Bookings</Link>
               <div className="h-px bg-surface-container w-full my-2"></div>
               <div className="flex flex-col gap-4">
                 {user ? (
@@ -262,10 +262,10 @@ export function Footer() {
           <p className="text-sm text-secondary text-center md:text-left">© 2026 QuickTurf Solapur. Effortless turf booking.</p>
         </div>
         <div className="flex flex-wrap justify-center gap-8">
-          <Link className="text-sm font-bold text-secondary hover:text-primary transition-colors" to="/about">About Us</Link>
-          <Link className="text-sm font-bold text-secondary hover:text-primary transition-colors" to="/help">FAQ & Support</Link>
-          <Link className="text-sm font-bold text-secondary hover:text-primary transition-colors" to="/explore">Explore Venues</Link>
-          <Link className="text-sm font-bold text-secondary hover:text-primary transition-colors" to="/help">Contact Us</Link>
+          <Link className="text-sm font-bold text-secondary hover:text-primary transition-colors uppercase tracking-widest text-[10px]" to="/about">About Us</Link>
+          <Link className="text-sm font-bold text-secondary hover:text-primary transition-colors uppercase tracking-widest text-[10px]" to="/help">FAQ & Support</Link>
+          <Link className="text-sm font-bold text-secondary hover:text-primary transition-colors uppercase tracking-widest text-[10px]" to="/explore">Venues</Link>
+          <Link className="text-sm font-bold text-secondary hover:text-primary transition-colors uppercase tracking-widest text-[10px]" to="/help">Contact Us</Link>
           <a 
             className="text-sm text-rose-500 font-bold hover:text-rose-600 transition-colors flex items-center gap-1.5 px-3 py-1 bg-rose-50 hover:bg-rose-100 rounded-full" 
             href="https://mail.google.com/mail/?view=cm&fs=1&to=support@quickturf.in&su=Bug%20Report%20-%20QuickTurf" 

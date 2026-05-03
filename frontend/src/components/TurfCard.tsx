@@ -1,9 +1,18 @@
 import { Star, Heart } from "lucide-react";
 import { Link } from "react-router-dom";
-import { Turf } from "../mockData";
+import { useAuth } from "../contexts/AuthContext";
 
 export function TurfCard({ turf }: { turf: any }) {
   const id = turf._id || turf.id;
+  const { user, favorites, toggleFavorite } = useAuth();
+  const isSaved = favorites.includes(id);
+
+  const handleFavorite = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleFavorite(id);
+  };
+
   return (
     <Link to={`/turf/${id}`} className="group cursor-pointer block p-4 bg-white rounded-xl border border-surface-container hover:shadow-lg transition-all active:scale-[0.98]">
       <div className="relative aspect-[4/3] rounded-lg overflow-hidden mb-4">
@@ -14,9 +23,14 @@ export function TurfCard({ turf }: { turf: any }) {
           loading="lazy"
           decoding="async"
         />
-        <button className="absolute top-3 right-3 text-white drop-shadow-md hover:scale-110 transition-transform active:scale-95">
-          <Heart className="w-6 h-6" />
-        </button>
+        {user && (
+          <button 
+            onClick={handleFavorite}
+            className={`absolute top-3 right-3 p-2 bg-white/20 backdrop-blur-md rounded-full shadow-lg hover:scale-110 transition-all active:scale-90 ${isSaved ? 'text-primary' : 'text-white'}`}
+          >
+            <Heart className={`w-5 h-5 ${isSaved ? 'fill-primary' : ''}`} />
+          </button>
+        )}
       </div>
       <div className="flex justify-between items-start">
         <div>

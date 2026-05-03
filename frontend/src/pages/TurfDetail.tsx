@@ -24,9 +24,8 @@ const AMENITY_ICONS: Record<string, any> = {
 export default function TurfDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, favorites, toggleFavorite } = useAuth();
   const [turf, setTurf] = useState<Turf | null>(null);
-  const [isSaved, setIsSaved] = useState(false);
   const [shareText, setShareText] = useState("Share");
 
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -264,9 +263,11 @@ export default function TurfDetail() {
                 <button onClick={handleShare} className="flex items-center gap-2 px-3 py-2 hover:bg-surface-container rounded-full transition-all font-semibold text-xs uppercase tracking-widest text-secondary">
                   <Share2 className="w-4 h-4" /> {shareText}
                 </button>
-                <button onClick={() => setIsSaved(!isSaved)} className={`flex items-center gap-2 px-3 py-2 hover:bg-surface-container rounded-full transition-all font-semibold text-xs uppercase tracking-widest ${isSaved ? 'text-primary' : 'text-secondary'}`}>
-                  <Heart className={`w-4 h-4 ${isSaved ? 'fill-primary' : ''}`} /> {isSaved ? 'Saved' : 'Save'}
-                </button>
+                {user && (
+                  <button onClick={() => toggleFavorite(id!)} className={`flex items-center gap-2 px-3 py-2 hover:bg-surface-container rounded-full transition-all font-semibold text-xs uppercase tracking-widest ${favorites.includes(id!) ? 'text-primary' : 'text-secondary'}`}>
+                    <Heart className={`w-4 h-4 ${favorites.includes(id!) ? 'fill-primary' : ''}`} /> {favorites.includes(id!) ? 'Saved' : 'Save'}
+                  </button>
+                )}
               </div>
             </div>
           </div>

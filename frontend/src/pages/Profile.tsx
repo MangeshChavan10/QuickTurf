@@ -4,16 +4,18 @@ import { motion } from "motion/react";
 import { useState, useEffect, type ReactNode } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { User, Phone, Mail, Lock, CheckCircle2, Pencil, ShieldCheck } from "lucide-react";
+import { User, Phone, Mail, Lock, CheckCircle2, Pencil, ShieldCheck, Heart } from "lucide-react";
+import { TurfCard } from "../components/TurfCard";
 
 export default function Profile() {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, favorites } = useAuth();
   const navigate = useNavigate();
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [savedTurfs, setSavedTurfs] = useState<any[]>([]);
 
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -22,13 +24,24 @@ export default function Profile() {
 
   useEffect(() => {
     if (!user) { navigate("/login"); return; }
+    
+    // Fetch profile
     fetch(`/api/user/profile?email=${encodeURIComponent(user.email)}`)
       .then(r => r.json())
       .then(data => {
         setName(data.name || "");
         setPhone(data.phoneNumber || "");
       });
-  }, [user, navigate]);
+
+    // Fetch all turfs to filter saved ones
+    apiFetch("/api/turfs")
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setSavedTurfs(data.filter(t => favorites.includes(t._id || t.id)));
+        }
+      });
+  }, [user, navigate, favorites]);
 
   const initials = name ? name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) : "?";
 
@@ -68,117 +81,145 @@ export default function Profile() {
     <div className="min-h-screen bg-background flex flex-col">
       <Header />
 
-      <main className="flex-1 pt-32 pb-20 max-w-[720px] mx-auto px-4 md:px-6 w-full page-transition">
-        {/* Page title */}
-        <div className="mb-10">
-          <h1 className="text-4xl md:text-5xl font-serif text-on-background mb-2">Your Profile</h1>
-          <p className="text-secondary text-sm opacity-70">Manage your personal details and account settings.</p>
-        </div>
-
-        {/* Avatar + basic info card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-[32px] border border-surface-container p-8 mb-6 flex flex-col sm:flex-row items-center gap-6 shadow-sm"
-        >
-          <div className="w-24 h-24 rounded-full bg-primary flex items-center justify-center shrink-0 shadow-lg shadow-primary/20">
-            <span className="text-3xl font-serif font-bold text-white">{initials}</span>
-          </div>
-          <div className="text-center sm:text-left">
-            <h2 className="text-2xl font-serif font-bold text-on-background">{name || "Your Name"}</h2>
-            <p className="text-secondary text-sm mt-1">{user?.email}</p>
-            <span className="inline-flex items-center gap-1.5 mt-2 text-[10px] uppercase tracking-widest font-black px-3 py-1 rounded-full bg-primary/10 text-primary">
-              <ShieldCheck className="w-3 h-3" /> {user?.role}
-            </span>
-          </div>
-        </motion.div>
-
-        {/* Edit form */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.08 }}
-          className="bg-white rounded-[32px] border border-surface-container p-8 shadow-sm space-y-6"
-        >
-          <h3 className="text-lg font-serif font-bold text-on-background border-b border-surface-container pb-4">Edit Details</h3>
-
-          {/* Name */}
-          <Field
-            icon={<User className="w-4 h-4" />}
-            label="Full Name"
-            id="name"
-            value={name}
-            onChange={setName}
-            placeholder="Your full name"
-            isEditing={editingField === 'name'}
-            onEdit={() => setEditingField('name')}
-          />
-
-          {/* Email — read only */}
-          <div className="flex items-center gap-4 p-4 bg-surface-container/50 rounded-2xl opacity-70">
-            <div className="p-2 bg-surface-container rounded-xl text-secondary"><Mail className="w-4 h-4" /></div>
-            <div className="flex-1">
-              <p className="text-[10px] font-bold text-secondary uppercase tracking-widest mb-0.5">Email</p>
-              <p className="text-sm font-semibold text-on-background">{user?.email}</p>
+      <main className="flex-1 pt-32 pb-20 max-w-[1280px] mx-auto px-4 md:px-6 w-full page-transition">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Left Column: Account Info */}
+          <div className="lg:col-span-5 space-y-6">
+            <div className="mb-6">
+              <h1 className="text-4xl font-serif text-on-background mb-2">Your Profile</h1>
+              <p className="text-secondary text-sm opacity-70">Manage your personal details and account settings.</p>
             </div>
-            <span className="text-[10px] text-secondary/60 font-bold uppercase tracking-wider">Read-only</span>
+
+            {/* Avatar + basic info card */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white rounded-[32px] border border-surface-container p-8 flex items-center gap-6 shadow-sm"
+            >
+              <div className="w-20 h-20 rounded-full bg-primary flex items-center justify-center shrink-0 shadow-lg shadow-primary/20">
+                <span className="text-2xl font-serif font-bold text-white">{initials}</span>
+              </div>
+              <div>
+                <h2 className="text-xl font-serif font-bold text-on-background">{name || "Your Name"}</h2>
+                <p className="text-secondary text-sm">{user?.email}</p>
+                <span className="inline-flex items-center gap-1.5 mt-2 text-[10px] uppercase tracking-widest font-black px-3 py-1 rounded-full bg-primary/10 text-primary">
+                  <ShieldCheck className="w-3 h-3" /> {user?.role}
+                </span>
+              </div>
+            </motion.div>
+
+            {/* Edit form */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.08 }}
+              className="bg-white rounded-[32px] border border-surface-container p-8 shadow-sm space-y-6"
+            >
+              <h3 className="text-lg font-serif font-bold text-on-background border-b border-surface-container pb-4">Edit Details</h3>
+
+              <Field
+                icon={<User className="w-4 h-4" />}
+                label="Full Name"
+                id="name"
+                value={name}
+                onChange={setName}
+                placeholder="Your full name"
+                isEditing={editingField === 'name'}
+                onEdit={() => setEditingField('name')}
+              />
+
+              <div className="flex items-center gap-4 p-4 bg-surface-container/50 rounded-2xl opacity-70">
+                <div className="p-2 bg-surface-container rounded-xl text-secondary"><Mail className="w-4 h-4" /></div>
+                <div className="flex-1">
+                  <p className="text-[10px] font-bold text-secondary uppercase tracking-widest mb-0.5">Email</p>
+                  <p className="text-sm font-semibold text-on-background">{user?.email}</p>
+                </div>
+                <span className="text-[10px] text-secondary/60 font-bold uppercase tracking-wider">Read-only</span>
+              </div>
+
+              <Field
+                icon={<Phone className="w-4 h-4" />}
+                label="Phone Number"
+                id="phone"
+                type="tel"
+                value={phone}
+                onChange={setPhone}
+                placeholder="e.g. 9876543210"
+                isEditing={editingField === 'phone'}
+                onEdit={() => setEditingField('phone')}
+              />
+
+              <div className="border-t border-surface-container pt-6 space-y-4">
+                <h4 className="text-sm font-bold text-on-background flex items-center gap-2">
+                  <Lock className="w-4 h-4 text-primary" /> Change Password
+                  <span className="text-[10px] font-normal text-secondary/60">(leave blank to keep current)</span>
+                </h4>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  placeholder="New password"
+                  className="w-full px-4 py-3 rounded-2xl border border-surface-container bg-background text-sm font-medium focus:outline-none focus:border-primary transition-all"
+                />
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  placeholder="Confirm new password"
+                  className="w-full px-4 py-3 rounded-2xl border border-surface-container bg-background text-sm font-medium focus:outline-none focus:border-primary transition-all"
+                />
+              </div>
+
+              {error && (
+                <p className="text-sm text-rose-600 bg-rose-50 px-4 py-3 rounded-2xl">{error}</p>
+              )}
+
+              <button
+                onClick={handleSave}
+                disabled={isSaving}
+                className="w-full py-4 rounded-full bg-primary text-white font-bold text-sm shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+              >
+                {isSaving ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : saved ? (
+                  <><CheckCircle2 className="w-5 h-5" /> Saved!</>
+                ) : (
+                  "Save Changes"
+                )}
+              </button>
+            </motion.div>
           </div>
 
-          {/* Phone */}
-          <Field
-            icon={<Phone className="w-4 h-4" />}
-            label="Phone Number"
-            id="phone"
-            type="tel"
-            value={phone}
-            onChange={setPhone}
-            placeholder="e.g. 9876543210"
-            isEditing={editingField === 'phone'}
-            onEdit={() => setEditingField('phone')}
-          />
+          {/* Right Column: Saved Turfs */}
+          <div className="lg:col-span-7">
+            <div className="mb-8">
+              <h2 className="text-3xl font-serif text-on-background mb-2">Saved Venues</h2>
+              <p className="text-secondary text-sm opacity-70">Quick access to your favorite turfs in Solapur.</p>
+            </div>
 
-          {/* Password change */}
-          <div className="border-t border-surface-container pt-6 space-y-4">
-            <h4 className="text-sm font-bold text-on-background flex items-center gap-2">
-              <Lock className="w-4 h-4 text-primary" /> Change Password
-              <span className="text-[10px] font-normal text-secondary/60">(leave blank to keep current)</span>
-            </h4>
-            <input
-              type="password"
-              value={newPassword}
-              onChange={e => setNewPassword(e.target.value)}
-              placeholder="New password"
-              className="w-full px-4 py-3 rounded-2xl border border-surface-container bg-background text-sm font-medium focus:outline-none focus:border-primary transition-all"
-            />
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={e => setConfirmPassword(e.target.value)}
-              placeholder="Confirm new password"
-              className="w-full px-4 py-3 rounded-2xl border border-surface-container bg-background text-sm font-medium focus:outline-none focus:border-primary transition-all"
-            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {savedTurfs.length > 0 ? (
+                savedTurfs.map(turf => (
+                  <TurfCard key={turf._id || turf.id} turf={turf} />
+                ))
+              ) : (
+                <div className="col-span-full py-16 px-8 border-2 border-dashed border-surface-container rounded-[32px] text-center bg-white/50">
+                  <div className="w-16 h-16 bg-surface-container rounded-full flex items-center justify-center mx-auto mb-4 text-secondary opacity-40">
+                    <Heart className="w-8 h-8" />
+                  </div>
+                  <h4 className="text-xl font-serif font-bold text-on-background mb-2">No saved venues yet</h4>
+                  <p className="text-secondary text-sm max-w-xs mx-auto mb-6">Venues you save will appear here for easy access later.</p>
+                  <button 
+                    onClick={() => navigate("/explore")}
+                    className="px-6 py-3 bg-primary text-white rounded-full font-bold text-sm hover:brightness-110 transition-all uppercase tracking-widest"
+                  >
+                    Browse Venues
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-
-          {/* Error */}
-          {error && (
-            <p className="text-sm text-rose-600 bg-rose-50 px-4 py-3 rounded-2xl">{error}</p>
-          )}
-
-          {/* Save button */}
-          <button
-            onClick={handleSave}
-            disabled={isSaving}
-            className="w-full py-4 rounded-full bg-primary text-white font-bold text-sm shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all disabled:opacity-60 flex items-center justify-center gap-2"
-          >
-            {isSaving ? (
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : saved ? (
-              <><CheckCircle2 className="w-5 h-5" /> Saved!</>
-            ) : (
-              "Save Changes"
-            )}
-          </button>
-        </motion.div>
+        </div>
       </main>
 
       <Footer />

@@ -6,8 +6,10 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Turf } from "../mockData";
 import TargetPractice from "../components/TargetPractice";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function Explore() {
+  const { user, favorites, toggleFavorite } = useAuth();
   const [activeFilter, setActiveFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [turfs, setTurfs] = useState<Turf[]>([]);
@@ -45,10 +47,10 @@ export default function Explore() {
                           turf.subLocation.toLowerCase().includes(searchQuery.toLowerCase());
     
     let matchesFilter = true;
-    if (activeFilter === "Football") {
-      matchesFilter = turf.type === "Football" || turf.type === "Both";
-    } else if (activeFilter === "Cricket") {
-      matchesFilter = turf.type === "Cricket" || turf.type === "Both";
+    if (activeFilter !== "All" && activeFilter !== "Price Range") {
+      matchesFilter = turf.type.toLowerCase().includes(activeFilter.toLowerCase()) || 
+                      (activeFilter === "Football" && turf.type.toLowerCase().includes("both")) ||
+                      (activeFilter === "Cricket" && turf.type.toLowerCase().includes("both"));
     }
     // "All" or other filters don't strictly filter out in this mock
 
@@ -124,9 +126,14 @@ export default function Explore() {
                       }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                    <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); }} className="absolute top-3 right-3 p-3 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-accent hover:text-white transition-all shadow-lg active:scale-90">
-                      <Heart className="w-5 h-5" />
-                    </button>
+                    {user && (
+                      <button 
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFavorite(turf._id || turf.id); }} 
+                        className={`absolute top-3 right-3 p-3 bg-white/20 backdrop-blur-md rounded-full shadow-lg transition-all active:scale-90 ${favorites.includes(turf._id || turf.id) ? 'text-primary' : 'text-white'}`}
+                      >
+                        <Heart className={`w-5 h-5 ${favorites.includes(turf._id || turf.id) ? 'fill-primary' : ''}`} />
+                      </button>
+                    )}
                     <div className="absolute bottom-3 left-3 flex gap-2">
                       <span className="bg-primary/90 text-white px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest backdrop-blur-sm">Verified</span>
                     </div>

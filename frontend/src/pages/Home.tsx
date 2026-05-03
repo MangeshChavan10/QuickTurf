@@ -186,7 +186,7 @@ export default function Home() {
                       <p className="text-secondary text-xs md:text-sm leading-relaxed font-medium opacity-70">{item.desc}</p>
                     </div>
                     {i < 2 && (
-                      <div className="hidden lg:flex absolute top-1/2 -right-6 -translate-y-1/2 z-10 items-center justify-center">
+                      <div className="hidden lg:flex absolute top-1/2 -right-6 -translate-y-1/2 z-10 items-center justify-center ml-4">
                         <ArrowRight className="w-6 h-6 text-primary/40" />
                       </div>
                     )}
