@@ -15,6 +15,7 @@ import cron from "node-cron";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import mongoSanitize from "express-mongo-sanitize";
+import cors from "cors";
 
 // Force IPv4 for external connections (Fixes ENETUNREACH for Gmail SMTP on Render)
 dns.setDefaultResultOrder('ipv4first');
@@ -195,6 +196,28 @@ async function startServer() {
   const app = express();
   const PORT = parseInt(process.env.PORT || '3000');
 
+  // ── CORS — allow Vercel frontend + local dev ──
+  // MUST BE FIRST MIDDLEWARE to handle OPTIONS preflight correctly
+  const ALLOWED_ORIGINS = [
+    'http://localhost:5173',
+    'http://localhost:4173',
+    'https://quick-turf-ten.vercel.app',
+    ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
+  ];
+
+  app.use(cors({
+    origin: function (origin, callback) {
+      if (!origin || ALLOWED_ORIGINS.includes(origin) || origin.endsWith('.vercel.app') || origin.includes('localhost') || origin.includes('127.0.0.1')) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  }));
+
   // Setup Multer Storage
   const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -244,34 +267,6 @@ async function startServer() {
   // ── Security: NoSQL Injection Sanitization ──
   app.use(mongoSanitize());
 
-  // ── CORS — allow Vercel frontend + local dev ──
-  const ALLOWED_ORIGINS = [
-    'http://localhost:5173',
-    'http://localhost:4173',
-    'https://quick-turf-ten.vercel.app',
-    ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
-  ];
-
-  app.use((req: any, res: any, next: any) => {
-    const origin = req.headers.origin;
-    // Allow all Vercel subdomains and local dev
-    const isVercel = origin && origin.endsWith('.vercel.app');
-    const isLocal = origin && (origin.includes('localhost') || origin.includes('127.0.0.1'));
-    
-    if (!origin || isVercel || isLocal || ALLOWED_ORIGINS.includes(origin)) {
-      res.setHeader('Access-Control-Allow-Origin', origin || '*');
-    } else {
-      res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGINS[2]);
-    }
-    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Max-Age', '86400'); // Cache preflight for 24h
-    if (req.method === 'OPTIONS') {
-      return res.sendStatus(204);
-    }
-    next();
-  });
 
   app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
 
