@@ -48,7 +48,8 @@ const userSchema = new mongoose.Schema({
     warnedAt: { type: Date, default: Date.now }
   }],
   isBanned: { type: Boolean, default: false },
-  banReason: { type: String, default: null }
+  banReason: { type: String, default: null },
+  googleId: { type: String, required: false, sparse: true }
 });
 
 const otpSchema = new mongoose.Schema({
@@ -142,16 +143,17 @@ const getTransporter = () => {
     if (isGmail) {
       transporter = nodemailer.createTransport({
         host: "smtp.gmail.com",
-        port: 465,
-        secure: true, // SSL for Port 465
+        port: 587,
+        secure: false, // use STARTTLS (port 587)
         auth: { 
           user: user.trim(), 
           pass: pass.trim().replace(/\s/g, "") 
         },
         tls: {
-           rejectUnauthorized: false
-        }
-      });
+          rejectUnauthorized: false
+        },
+        family: 4  // Force IPv4 to avoid ENETUNREACH on IPv6
+      } as any);
     } else {
       transporter = nodemailer.createTransport({
         host,
@@ -726,23 +728,26 @@ async function startServer() {
           });
           console.log(`[EMAIL OTP] Sent to ${email}`);
         } catch (mailError: any) {
-          console.error("Mail send error:", mailError);
+          console.error("Mail send error:", mailError.message);
           isSimulated = true;
-          // Optionally provide the error message in the response for debugging
-          // (Remove this in production)
           simulationReason = `Mail service error: ${mailError.message}`;
         }
       } else {
-        // SIMULATION for Phone or if email SMTP is missing
         isSimulated = true;
         simulationReason = !mailTransporter ? "SMTP credentials missing" : "Phone identifier provided";
-        console.log(`[OTP SIMULATION] Sending OTP ${otp} to ${identifier}`);
+      }
+
+      // Always log OTP to backend console for dev testing
+      if (isSimulated) {
+        console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+        console.log(`  📧 OTP FOR ${identifier}: ${otp}`);
+        console.log(`  ⚠️  Simulation reason: ${simulationReason}`);
+        console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
       }
       
       res.json({ 
         success: true, 
-        message: isSimulated ? `OTP generated (Simulation: ${simulationReason})` : "OTP sent successfully",
-        otp: isSimulated ? otp : undefined 
+        message: "OTP sent successfully"
       });
     } catch (error) {
       console.error("OTP Error:", error);
@@ -781,7 +786,7 @@ async function startServer() {
       }
 
       // User exists, typical login
-      const token = jwt.sign({ userId: user._id, identifier: email || user.phoneNumber }, JWT_SECRET);
+      const token = jwt.sign({ id: user._id, email: user.email || user.phoneNumber }, JWT_SECRET, { expiresIn: '30d' });
       res.json({ 
         token, 
         userExists: true,
@@ -789,7 +794,7 @@ async function startServer() {
           name: user.name, 
           email: user.email || "", 
           phoneNumber: user.phoneNumber || "",
-          role: 'user',
+          role: user.role || 'user',
           isApproved: true
         } 
       });
@@ -800,18 +805,34 @@ async function startServer() {
 
   app.post("/api/auth/signup", async (req, res) => {
     try {
-      const { name, email, password } = req.body;
+      const { name, email, password, otp } = req.body;
+      if (!name || !email || !password) {
+        return res.status(400).json({ error: "Name, email, and password are required." });
+      }
+      if (!otp) {
+        return res.status(400).json({ error: "OTP is required to verify your email." });
+      }
+
+      // Verify OTP first
+      const otpRecord = await Otp.findOne({ identifier: email, otp });
+      if (!otpRecord || otpRecord.expiresAt < new Date()) {
+        return res.status(400).json({ error: "Invalid or expired OTP. Please request a new one." });
+      }
+      await Otp.deleteOne({ _id: otpRecord._id });
+
+      // Check for existing user
       const existingUser = await User.findOne({ email });
-      if (existingUser) return res.status(400).json({ error: "User already exists" });
+      if (existingUser) return res.status(400).json({ error: "An account with this email already exists. Please log in." });
 
       const hashedPassword = await bcrypt.hash(password, 10);
       const user = new User({ name, email, password: hashedPassword });
       await user.save();
 
-      const token = jwt.sign({ userId: user._id, email: user.email }, JWT_SECRET);
-      res.json({ token, user: { name: user.name, email: user.email, role: 'user', isApproved: true } });
+      const token = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, { expiresIn: '30d' });
+      res.json({ success: true, token, user: { name: user.name, email: user.email, role: 'user', isApproved: true } });
     } catch (error) {
-      res.status(500).json({ error: "Signup failed" });
+      console.error('[Signup Error]', error);
+      res.status(500).json({ error: "Signup failed. Please try again." });
     }
   });
 
@@ -825,10 +846,68 @@ async function startServer() {
       const isMatch = await bcrypt.compare(password, user.password as string);
       if (!isMatch) return res.status(400).json({ error: "Invalid credentials" });
 
-      const token = jwt.sign({ userId: user._id, email: user.email }, JWT_SECRET);
-      res.json({ token, user: { name: user.name, email: user.email, role: 'user', isApproved: true } });
+      const token = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, { expiresIn: '30d' });
+      res.json({ token, user: { name: user.name, email: user.email, role: user.role || 'user', isApproved: true } });
     } catch (error) {
       res.status(500).json({ error: "Login failed" });
+    }
+  });
+
+  // ── Google OAuth Login ──
+  app.post("/api/auth/google", async (req, res) => {
+    try {
+      const { credential } = req.body;
+      if (!credential) return res.status(400).json({ error: "No credential provided" });
+
+      const { OAuth2Client } = await import('google-auth-library');
+      const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+      
+      const ticket = await client.verifyIdToken({
+        idToken: credential,
+        audience: process.env.GOOGLE_CLIENT_ID
+      });
+      const payload = ticket.getPayload();
+      if (!payload || !payload.email) {
+        return res.status(400).json({ error: "Invalid Google token" });
+      }
+
+      const { email, name, sub: googleId } = payload;
+      
+      let user = await User.findOne({ email });
+      if (!user) {
+        // Auto-create account for new Google users
+        user = new User({ 
+          name: name || email.split('@')[0], 
+          email, 
+          googleId,
+          password: null // No password for Google users
+        });
+        await user.save();
+      } else {
+        // Update googleId if not set
+        if (!user.googleId) {
+          user.googleId = googleId;
+          await user.save();
+        }
+      }
+
+      if (user.isBanned) {
+        return res.status(403).json({ error: `Account suspended: ${user.banReason || 'Policy violation'}` });
+      }
+
+      const token = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, { expiresIn: '30d' });
+      res.json({ 
+        token, 
+        user: { 
+          name: user.name, 
+          email: user.email, 
+          role: user.role || 'user', 
+          isApproved: true 
+        } 
+      });
+    } catch (error: any) {
+      console.error('[Google Auth Error]', error.message);
+      res.status(500).json({ error: "Google authentication failed" });
     }
   });
 
@@ -847,7 +926,7 @@ async function startServer() {
         ]
       });
       
-      const bookedSlots = bookings.map(b => b.time);
+      const bookedSlots = bookings.flatMap(b => (b.time || '').split(',').map(s => s.trim()));
       res.json({ bookedSlots });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch availability" });
@@ -1090,10 +1169,16 @@ async function startServer() {
   });
 
   app.get("/api/bookings", async (req, res) => {
-    const { email } = req.query;
-    if (!email || typeof email !== 'string') return res.status(400).json({ error: "Email required" });
     try {
-      const bookings = await Booking.find({ userEmail: email }).sort({ createdAt: -1 });
+      const authHeader = req.headers.authorization;
+      if (!authHeader) return res.status(401).json({ error: "Unauthorized" });
+      const token = authHeader.split(" ")[1];
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || "default_secret") as any;
+      const user = await User.findById(decoded.id);
+      if (!user) return res.status(404).json({ error: "User not found" });
+
+      const identifier = user.email || user.phoneNumber || 'undefined';
+      const bookings = await Booking.find({ userEmail: identifier }).sort({ createdAt: -1 });
       // Manually enrich each booking with turf data
       const enriched = await Promise.all(bookings.map(async (b) => {
         let turfData = null;
@@ -1158,13 +1243,8 @@ async function startServer() {
         }
         return new Date(NaN);
       };
-      const _slotStart = _quickParseDate(booking.date, booking.time || '');
-      const _hoursLeft = isNaN(_slotStart.getTime())
-        ? 999
-        : (_slotStart.getTime() - Date.now()) / (1000 * 60 * 60);
-      if (_hoursLeft >= 0 && _hoursLeft < 6) {
-        return res.status(400).json({ error: "Cancellation not allowed within 6 hours of the booking start time." });
-      }
+      // We allow cancellation at any time to free up the slot, 
+      // but refunds are governed by the 12-hour rule below.
 
       // ── 12-hour refund window check ──
       // Parses date like "FRI 25 APR" and time like "10:00 PM" or "10:00 PM - 11:00 PM"
@@ -1210,8 +1290,15 @@ async function startServer() {
       const hoursUntilStart = isNaN(turfStartDate.getTime())
         ? 999  // Can't parse the time — allow cancellation
         : (turfStartDate.getTime() - Date.now()) / (1000 * 60 * 60);
-      const isWithinNoRefundWindow = hoursUntilStart < 6;
-      const refundAmount = isWithinNoRefundWindow ? 0 : Math.max(0, (booking.amount || 0) - PLATFORM_FEE);
+      
+      const isWithinNoRefundWindow = hoursUntilStart < 12;
+      let refundAmount = 0;
+      let refundStatus = 'no_refund';
+
+      if (booking.status === 'Confirmed') {
+        refundAmount = isWithinNoRefundWindow ? 0 : Math.max(0, (booking.amount || 0) - PLATFORM_FEE);
+        refundStatus = isWithinNoRefundWindow ? 'no_refund' : 'initiated';
+      }
 
       // ── Mark idempotency key + initiate cancellation atomically ──
       booking.status = 'Cancelled';
@@ -1219,7 +1306,7 @@ async function startServer() {
       booking.cancelledAt = new Date();
       booking.cancelIdempotencyKey = idempotencyKey;
       booking.refundedAmount = refundAmount;
-      booking.refundStatus = isWithinNoRefundWindow ? 'no_refund' : 'initiated';
+      booking.refundStatus = refundStatus;
       await booking.save();
 
       // ── Attempt Razorpay refund (async — webhook will confirm later) ──
@@ -1400,15 +1487,21 @@ async function startServer() {
     const { amount, turfId, date, time, userEmail } = req.body;
     
     try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader) return res.status(401).json({ error: "Unauthorized" });
+      const token = authHeader.split(" ")[1];
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || "default_secret") as any;
+      const user = await User.findById(decoded.id);
+      if (!user) return res.status(404).json({ error: "User not found" });
+
+      const identifier = user.email || user.phoneNumber || 'undefined';
+
       // 0. Check if user is banned
-      if (userEmail) {
-        const bookingUser = await User.findOne({ email: userEmail });
-        if (bookingUser?.isBanned) {
-          return res.status(403).json({
-            success: false,
-            error: `Your account has been suspended. Reason: ${bookingUser.banReason || 'Platform policy violation'}. Contact support@quickturf.in.`
-          });
-        }
+      if (user.isBanned) {
+        return res.status(403).json({
+          success: false,
+          error: `Your account has been suspended. Reason: ${user.banReason || 'Platform policy violation'}. Contact support@quickturf.in.`
+        });
       }
 
       // 1a. Check if turf is disabled by superadmin
@@ -1468,7 +1561,7 @@ async function startServer() {
         date,
         time,
         status: 'Pending',
-        userEmail: userEmail || "customer@example.com"
+        userEmail: identifier
       });
       await newBooking.save();
       
