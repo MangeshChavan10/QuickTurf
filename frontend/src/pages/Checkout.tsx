@@ -36,8 +36,8 @@ export default function Checkout() {
 
   const slotsList = selectedSlot ? selectedSlot.split(',').map((s: string) => s.trim()) : [];
   const numSlots = slotsList.length || 1;
-  const basePrice = (turf?.price || 0) * numSlots;
-  const platformFee = 20; // flat fee, charged once regardless of slots
+  const basePrice = 1 * numSlots;
+  const platformFee = 0; // flat fee, charged once regardless of slots
   const totalAmount = basePrice + platformFee;
 
   useEffect(() => {
@@ -293,7 +293,7 @@ export default function Checkout() {
               <div className="space-y-3">
                 <div className="flex justify-between text-secondary">
                   <span className="font-medium font-sans text-sm md:text-base">
-                    Session Fee {numSlots > 1 ? `(${numSlots} slots × ₹${(turf.price || 0).toLocaleString()})` : ''}
+                    Session Fee {numSlots > 1 ? `(${numSlots} slots × ₹1)` : ''}
                   </span>
                   <span className="font-bold text-black">₹{basePrice.toLocaleString()}</span>
                 </div>
