@@ -14,8 +14,10 @@ import Help from "./pages/Help";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import { AuthProvider } from "./contexts/AuthContext";
+import { ToastProvider } from "./contexts/ToastContext";
 import { ProtectedRoute, AdminRoute, SuperAdminRoute } from "./components/ProtectedRoute";
 import Chatbot from "./components/Chatbot";
+import { MobileBottomNav } from "./components/Navigation";
 
 import AdminAuth from "./pages/admin/AdminAuth";
 import Dashboard from "./pages/admin/Dashboard";
@@ -45,6 +47,7 @@ export default function App() {
         {isLoading && <div key="loader"><InitialLoader onComplete={() => setIsLoading(false)} /></div>}
       </AnimatePresence>
       <AuthProvider>
+        <ToastProvider>
         <Router>
           <Routes>
             {/* ── Public / User Routes ── */}
@@ -78,8 +81,10 @@ export default function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Router>
+        </ToastProvider>
       </AuthProvider>
       <Chatbot />
+      <MobileBottomNav />
     </>
   );
 }

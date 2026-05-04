@@ -173,6 +173,17 @@ export default function Login() {
             <p className="text-secondary font-medium italic opacity-80 text-sm">Continue your athletic journey</p>
           </div>
 
+          {/* Context banner: shown when redirected from booking */}
+          {location.state?.from?.pathname === '/checkout' && (
+            <div className="mb-6 p-4 bg-primary/10 border border-primary/20 rounded-2xl flex items-start gap-3">
+              <span className="text-xl">🏟️</span>
+              <div>
+                <p className="font-bold text-primary text-sm">One step away from your booking!</p>
+                <p className="text-secondary text-xs mt-0.5">Log in to complete and lock your selected slot.</p>
+              </div>
+            </div>
+          )}
+
           <div className="flex bg-surface-container p-1 rounded-2xl mb-8">
             <button 
               onClick={() => { setLoginType("email"); setError(""); setOtpSent(false); }}

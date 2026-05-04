@@ -5,10 +5,12 @@ import { Calendar, Clock, MapPin, ChevronRight, ChevronDown, IndianRupee, CheckC
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "../contexts/ToastContext";
 
 export default function Bookings() {
   const { user, token } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [myBookings, setMyBookings] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
@@ -52,13 +54,13 @@ export default function Bookings() {
         ));
         // For Pending requests, no payment was made — skip refund-related messaging
         if (!isPending) {
-          alert(data.message);
+          toast(data.message, 'success');
         }
       } else {
-        alert(data.error || 'Failed to cancel booking.');
+        toast(data.error || 'Failed to cancel booking.', 'error');
       }
     } catch {
-      alert('Something went wrong. Please try again.');
+      toast('Something went wrong. Please try again.', 'error');
     } finally {
       setCancellingId(null);
       setConfirmId(null);
@@ -99,10 +101,10 @@ export default function Bookings() {
       setReviewingBooking(null);
       setReviewText("");
       setReviewRating(5);
-      alert("Thank you! Your review has been published.");
+      toast("Thank you! Your review has been published.", "success");
     } catch (error) {
       console.error("Error submitting review:", error);
-      alert("Failed to submit review. Please try again.");
+      toast("Failed to submit review. Please try again.", "error");
     } finally {
       setIsSubmittingReview(false);
     }
@@ -252,11 +254,17 @@ export default function Bookings() {
 
                   <div className="h-px w-full bg-white"></div>
 
-                  {/* Total Paid Row */}
+                  {/* Amount Row */}
                   <div className="flex items-center justify-between px-1">
                     <div>
                       <div className="text-[28px] font-bold text-black leading-none mb-1">₹{(booking.amount || 0).toLocaleString()}</div>
-                      <div className="text-xs text-secondary font-bold">Payment successful</div>
+                      <div className={`text-xs font-bold ${
+                        booking.status === 'Pending' ? 'text-amber-500' :
+                        booking.status === 'Cancelled' ? 'text-rose-400' : 'text-secondary'
+                      }`}>
+                        {booking.status === 'Pending' ? 'Payment pending' :
+                         booking.status === 'Cancelled' ? 'Booking cancelled' : 'Payment successful'}
+                      </div>
                     </div>
                     <div className="text-right flex flex-col items-end gap-1">
                       <div className="font-mono text-[10px] text-secondary font-bold uppercase tracking-widest bg-white px-2 py-1 rounded">ID: {booking.orderId}</div>

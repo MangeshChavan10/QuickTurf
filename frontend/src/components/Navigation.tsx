@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Search, Circle as SoccerBall, Menu, X, Lock, LogOut, User, Bug, Moon, Sun } from "lucide-react";
+import { Search, Circle as SoccerBall, Menu, X, Lock, LogOut, User, Bug, Moon, Sun, Home, Compass, CalendarDays, UserCircle } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "../contexts/AuthContext";
@@ -278,5 +278,40 @@ export function Footer() {
         </div>
       </div>
     </footer>
+  );
+}
+
+export function MobileBottomNav() {
+  const location = useLocation();
+  const { user } = useAuth();
+  const path = location.pathname;
+
+  const tabs = [
+    { to: "/", icon: Home, label: "Home" },
+    { to: "/explore", icon: Compass, label: "Explore" },
+    { to: "/bookings", icon: CalendarDays, label: "Bookings" },
+    { to: user ? "/profile" : "/login", icon: UserCircle, label: user ? "Profile" : "Login" },
+  ];
+
+  return (
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-[70] bg-white/95 backdrop-blur-md border-t border-surface-container">
+      <div className="flex items-center justify-around px-2 py-2">
+        {tabs.map(({ to, icon: Icon, label }) => {
+          const isActive = to === "/" ? path === "/" : path.startsWith(to);
+          return (
+            <Link
+              key={to}
+              to={to}
+              className={`flex flex-col items-center gap-0.5 px-4 py-2 rounded-2xl transition-all ${
+                isActive ? "text-primary" : "text-secondary"
+              }`}
+            >
+              <Icon className={`w-6 h-6 transition-all ${isActive ? "scale-110" : ""}`} />
+              <span className={`text-[10px] font-bold uppercase tracking-wider ${isActive ? "text-primary" : ""}`}>{label}</span>
+            </Link>
+          );
+        })}
+      </div>
+    </nav>
   );
 }
