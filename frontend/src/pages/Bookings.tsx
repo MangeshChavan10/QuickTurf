@@ -41,7 +41,7 @@ export default function Bookings() {
       });
   }, [user, token, navigate]);
 
-  const handleCancel = async (bookingId: string) => {
+  const handleCancel = async (bookingId: string, isPending = false) => {
     setCancellingId(bookingId);
     try {
       const res = await apiFetch(`/api/bookings/${bookingId}/cancel`, { method: 'POST' });
@@ -50,7 +50,10 @@ export default function Bookings() {
         setMyBookings(prev => prev.map(b =>
           b._id === bookingId ? { ...b, status: 'Cancelled' } : b
         ));
-        alert(data.message);
+        // For Pending requests, no payment was made — skip refund-related messaging
+        if (!isPending) {
+          alert(data.message);
+        }
       } else {
         alert(data.error || 'Failed to cancel booking.');
       }
@@ -138,12 +141,12 @@ export default function Bookings() {
                 </div>
                 <h3 className="text-2xl font-serif font-bold text-black">Cancel this booking?</h3>
                 <p className="text-secondary text-sm leading-relaxed">
-                  If you're cancelling <strong>more than 12 hours</strong> before your slot, you'll get a refund minus a <strong>₹50 platform fee</strong>.<br /><br />
-                  If you cancel <strong>within 12 hours</strong> of your booking, <strong>no refund</strong> will be issued.
+                  If you're cancelling <strong>more than 12 hours</strong> before your slot, you'll receive a refund minus a <strong>₹50 platform fee</strong>.<br /><br />
+                  Cancelling <strong>within 12 hours</strong> of your slot time will result in <strong>no refund</strong>.
                 </p>
                 <div className="w-full bg-amber-50 border border-amber-200 rounded-2xl p-4 text-left">
                   <p className="text-xs text-amber-800 leading-relaxed">
-                    <strong>⚠️ Disclaimer:</strong> QuickTurf initiates your refund immediately via Razorpay. However, the actual credit to your bank account or card depends on your bank and typically takes <strong>5–7 business days</strong>. You will receive a second email once your bank confirms the transfer. For disputes, contact <strong>support@quickturf.in</strong>.
+                    <strong>⚠️ Note:</strong> Refunds are processed immediately via Razorpay and typically appear in your account within <strong>5–7 business days</strong>. For disputes, contact <strong>support@quickturf.in</strong>.
                   </p>
                 </div>
                 <div className="flex gap-3 w-full mt-4">
@@ -338,7 +341,7 @@ export default function Bookings() {
                             }} />
                           </div>
                           <div className="grid grid-cols-2 gap-3">
-                            <button onClick={() => handleCancel(booking._id)} disabled={cancellingId === booking._id} className="py-4 bg-rose-50 text-rose-600 font-bold text-sm rounded-[10px] hover:bg-rose-100 transition-colors">
+                            <button onClick={() => handleCancel(booking._id, true)} disabled={cancellingId === booking._id} className="py-4 bg-rose-50 text-rose-600 font-bold text-sm rounded-[10px] hover:bg-rose-100 transition-colors">
                               {cancellingId === booking._id ? "Cancelling..." : "Cancel"}
                             </button>
                             <button onClick={() => navigate('/checkout', { state: { turf: booking.turfId, selectedSlot: booking.time, selectedDate: booking.date } })} className="py-4 bg-primary text-white font-bold text-sm rounded-[10px] hover:brightness-110 transition-colors">
