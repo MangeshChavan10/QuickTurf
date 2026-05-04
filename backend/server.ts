@@ -1735,12 +1735,15 @@ async function startServer() {
     // ── Task 1: Expire stale Pending bookings older than 5 minutes ──
     try {
       const fiveMinsAgo = new Date(Date.now() - 5 * 60 * 1000);
-      const expired = await Booking.deleteMany({
-        status: 'Pending',
-        createdAt: { $lt: fiveMinsAgo }
-      });
-      if (expired.deletedCount > 0) {
-        console.log(`[Cron] Released ${expired.deletedCount} expired pending booking lock(s)`);
+      const expired = await Booking.updateMany(
+        {
+          status: 'Pending',
+          createdAt: { $lt: fiveMinsAgo }
+        },
+        { $set: { status: 'Cancelled' } }
+      );
+      if (expired.modifiedCount > 0) {
+        console.log(`[Cron] Released ${expired.modifiedCount} expired pending booking lock(s)`);
       }
     } catch (err) {
       console.error('[Cron] Error cleaning up pending bookings:', err);
