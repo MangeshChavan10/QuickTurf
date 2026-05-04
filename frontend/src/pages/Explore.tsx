@@ -61,7 +61,7 @@ export default function Explore() {
     <div className="h-screen flex flex-col bg-background">
       <Header />
 
-      <main className="pt-20 flex flex-1 overflow-hidden relative">
+      <main className="pt-20 pb-16 md:pb-0 flex flex-1 overflow-hidden relative">
         {/* Full Width List Section */}
         <section className="w-full flex flex-col bg-background overflow-y-auto custom-scrollbar transition-all duration-500">
           <div className="sticky top-0 bg-background/95 backdrop-blur-md z-20 px-4 md:px-8 py-4 border-b border-surface-container">

@@ -35,7 +35,7 @@ export default function Home() {
     <div className="min-h-screen flex flex-col">
       <Header />
 
-      <main className="pt-20">
+      <main className="pt-20 pb-16 md:pb-0">
         {/* Editorial Hero Section */}
         <section className="relative min-h-[550px] md:min-h-[650px] lg:h-[750px] flex items-center pt-8 md:pt-12 pb-16 md:pb-20 px-6 overflow-hidden bg-background">
           <div className="absolute top-0 right-0 w-[50%] h-full bg-primary/5 rounded-l-[100px] -z-10 hidden lg:block"></div>
@@ -74,13 +74,13 @@ export default function Home() {
               >
                 <button
                   onClick={() => document.getElementById('turfs-section')?.scrollIntoView({ behavior: 'smooth' })}
-                  className="w-full sm:w-auto bg-primary text-white py-4 px-10 rounded-2xl hover:brightness-110 transition-all font-bold text-sm tracking-widest uppercase shadow-xl shadow-primary/20"
+                  className="w-full sm:w-auto bg-primary text-white py-4 px-10 rounded-2xl hover:brightness-110 transition-all font-bold text-sm tracking-widest uppercase shadow-xl shadow-primary/20 cursor-pointer"
                 >
                   See Available Slots
                 </button>
                 <button
                   onClick={() => document.getElementById('how-to-use')?.scrollIntoView({ behavior: 'smooth' })}
-                  className="w-full sm:w-auto bg-white text-on-background py-4 px-10 rounded-2xl border border-surface-container hover:bg-surface-container/10 transition-all font-bold text-sm tracking-widest uppercase"
+                  className="w-full sm:w-auto bg-white text-on-background py-4 px-10 rounded-2xl border border-surface-container hover:bg-surface-container/10 transition-all font-bold text-sm tracking-widest uppercase cursor-pointer"
                 >
                   Learn More
                 </button>
@@ -230,27 +230,30 @@ export default function Home() {
           </div>
         </div>
 
-        <section id="turfs-section" className="max-w-[1280px] mx-auto px-6 py-20 md:py-32 scroll-mt-20">
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end mb-16 gap-8 border-b border-surface-container/50 pb-10">
+        <section id="turfs-section" className="max-w-[1280px] mx-auto px-4 md:px-6 py-16 md:py-32 scroll-mt-20">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end mb-10 md:mb-16 gap-6 border-b border-surface-container/50 pb-8 md:pb-10">
             <div className="max-w-2xl relative">
               <div className="absolute -left-6 top-0 w-1 h-full bg-primary rounded-r-full hidden md:block"></div>
-              <h2 className="text-4xl md:text-6xl lg:text-7xl font-serif text-on-background mb-4 leading-tight tracking-tight">
+              <h2 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-serif text-on-background mb-3 leading-tight tracking-tight">
                 Places worth
                 <br />playing at
               </h2>
-              <p className="text-secondary text-lg md:text-xl font-light opacity-80 italic">
+              <p className="text-secondary text-base md:text-xl font-light opacity-80 italic">
                 Picked by real players, rated honestly
               </p>
             </div>
-            <Link to="/explore" className="flex items-center gap-4 px-8 py-4 rounded-full border border-surface-container hover:border-primary hover:bg-primary/5 transition-all group font-bold tracking-widest uppercase text-xs md:text-sm text-on-background">
-              Explore All
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors">
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            <Link
+              to="/explore"
+              className="w-full lg:w-auto flex items-center justify-center lg:justify-start gap-3 px-6 py-3.5 rounded-full border border-surface-container hover:border-primary hover:bg-primary/5 transition-all group font-bold tracking-widest uppercase text-xs text-on-background"
+            >
+              Explore All Venues
+              <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors shrink-0">
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
               </div>
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-8">
             {turfs.map(turf => (
               <div key={turf._id || turf.id}>
                 <TurfCard turf={turf} />

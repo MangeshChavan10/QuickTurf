@@ -219,7 +219,7 @@ export default function Checkout() {
     <div className="min-h-screen bg-background">
       <Header simplified />
       
-      <main className="pt-28 md:pt-32 pb-24 max-w-[640px] mx-auto px-4 md:px-6 relative">
+      <main className="pt-28 md:pt-32 pb-36 md:pb-24 max-w-[640px] mx-auto px-4 md:px-6 relative">
         {isProcessing && (
           <div className="fixed inset-0 z-[100] bg-background/80 backdrop-blur-md flex flex-col items-center justify-center">
             <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />

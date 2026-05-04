@@ -43,7 +43,7 @@ export default function Help() {
     <div className="min-h-screen bg-background flex flex-col">
       <Header />
       
-      <main className="flex-1 pt-32 pb-24 w-full page-transition">
+      <main className="flex-1 pt-32 pb-36 md:pb-24 w-full page-transition">
         {/* Search Hero */}
         <section className="bg-primary/5 py-24 mb-16 border-b border-surface-container">
            <div className="max-w-[1280px] mx-auto px-4 md:px-6 text-center">

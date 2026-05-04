@@ -2,9 +2,9 @@ import { apiFetch } from "../lib/api";
 import { useParams, useNavigate } from "react-router-dom";
 import { REVIEWS, Turf, Review } from "../mockData";
 import { Header, Footer } from "../components/Navigation";
-import { Star, Heart, Share2, MapPin, ShieldCheck, Shirt, Droplets, Car, PlusCircle, Building, Lightbulb, Circle as SoccerBall, X } from "lucide-react";
+import { Star, Heart, Share2, MapPin, ShieldCheck, Shirt, Droplets, Car, PlusCircle, Building, Lightbulb, Circle as SoccerBall, X, ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
 
 const AMENITY_ICONS: Record<string, any> = {
@@ -209,6 +209,8 @@ export default function TurfDetail() {
 
   const [selectedDate, setSelectedDate] = useState(DATES[0]);
   const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
+  const dateScrollRef = useRef<HTMLDivElement>(null);
+  const slotScrollRef = useRef<HTMLDivElement>(null);
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
   const [isAvailabilityLoading, setIsAvailabilityLoading] = useState(false);
 
@@ -330,12 +332,32 @@ export default function TurfDetail() {
               {/* Responsive Date & Time Selection */}
               <div className="flex flex-col md:flex-row gap-8 md:gap-16 pt-4">
                 {/* Date Slot */}
-                <div className="w-full md:w-32 flex flex-col shrink-0">
-                  <div className="mb-4 md:mb-6">
-                    <p className="text-[10px] font-black text-secondary tracking-[0.2em] uppercase mb-1 md:mb-2">Schedule</p>
-                    <h3 className="text-xl md:text-2xl font-serif text-on-background leading-none">Date</h3>
+                <div className="w-full md:w-36 flex flex-col shrink-0">
+                  <div className="mb-4 md:mb-4 flex items-center justify-between">
+                    <div>
+                      <p className="text-[10px] font-black text-secondary tracking-[0.2em] uppercase mb-1">Schedule</p>
+                      <h3 className="text-xl md:text-2xl font-serif text-on-background leading-none">Date</h3>
+                    </div>
+                    {/* Mobile: left/right arrows */}
+                    <div className="flex gap-1 md:hidden">
+                      <button onClick={() => dateScrollRef.current?.scrollBy({ left: -120, behavior: 'smooth' })} className="p-1.5 rounded-full bg-surface-container hover:bg-primary/10 text-secondary hover:text-primary transition-all cursor-pointer">
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => dateScrollRef.current?.scrollBy({ left: 120, behavior: 'smooth' })} className="p-1.5 rounded-full bg-surface-container hover:bg-primary/10 text-secondary hover:text-primary transition-all cursor-pointer">
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                    {/* Desktop: up/down arrows */}
+                    <div className="hidden md:flex gap-1">
+                      <button onClick={() => dateScrollRef.current?.scrollBy({ top: -100, behavior: 'smooth' })} className="p-1.5 rounded-full bg-surface-container hover:bg-primary/10 text-secondary hover:text-primary transition-all cursor-pointer">
+                        <ChevronUp className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => dateScrollRef.current?.scrollBy({ top: 100, behavior: 'smooth' })} className="p-1.5 rounded-full bg-surface-container hover:bg-primary/10 text-secondary hover:text-primary transition-all cursor-pointer">
+                        <ChevronDown className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex flex-row md:flex-col gap-2 overflow-x-auto md:overflow-y-auto md:h-[350px] no-scrollbar pb-2 md:pb-8 md:pr-2">
+                  <div ref={dateScrollRef} className="flex flex-row md:flex-col gap-2 overflow-x-auto md:overflow-y-auto md:h-[350px] no-scrollbar pb-2 md:pb-8 md:pr-2">
                     {DATES.map((dateObj, i) => {
                       const isSelected = selectedDate.date === dateObj.date && selectedDate.month === dateObj.month;
                       return (
@@ -363,9 +385,20 @@ export default function TurfDetail() {
 
                 {/* Time Slots */}
                 <div className="relative overflow-hidden flex flex-col flex-1">
-                  <div className="mb-6">
-                    <p className="text-[10px] font-black text-secondary tracking-[0.2em] uppercase mb-1 md:mb-2">Availability</p>
-                    <h3 className="text-xl md:text-2xl font-serif text-on-background leading-none">Time Slots</h3>
+                  <div className="mb-4 flex items-center justify-between">
+                    <div>
+                      <p className="text-[10px] font-black text-secondary tracking-[0.2em] uppercase mb-1 md:mb-2">Availability</p>
+                      <h3 className="text-xl md:text-2xl font-serif text-on-background leading-none">Time Slots</h3>
+                    </div>
+                    {/* Desktop scroll arrows for time slots */}
+                    <div className="hidden md:flex gap-1">
+                      <button onClick={() => slotScrollRef.current?.scrollBy({ top: -160, behavior: 'smooth' })} className="p-1.5 rounded-full bg-surface-container hover:bg-primary/10 text-secondary hover:text-primary transition-all cursor-pointer">
+                        <ChevronUp className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => slotScrollRef.current?.scrollBy({ top: 160, behavior: 'smooth' })} className="p-1.5 rounded-full bg-surface-container hover:bg-primary/10 text-secondary hover:text-primary transition-all cursor-pointer">
+                        <ChevronDown className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
 
                   {isAvailabilityLoading && (
@@ -374,7 +407,7 @@ export default function TurfDetail() {
                     </div>
                   )}
 
-                  <div className="space-y-8 md:space-y-10 overflow-y-auto md:h-[350px] no-scrollbar md:pr-4 pb-4">
+                  <div ref={slotScrollRef} className="space-y-8 md:space-y-10 overflow-y-auto md:h-[350px] no-scrollbar md:pr-4 pb-4">
                     {Object.entries(TIME_SLOTS).map(([session, slots]) => (
                       <div key={session} className="space-y-4 md:space-y-5">
                         <div className="flex items-center gap-4">
@@ -508,7 +541,7 @@ export default function TurfDetail() {
               initial={{ y: 100 }}
               animate={{ y: 0 }}
               exit={{ y: 100 }}
-              className="fixed bottom-0 left-0 right-0 z-[60] bg-white border-t border-surface-container shadow-[0px_-10px_40px_rgba(42,52,40,0.2)] pb-safe"
+              className="fixed bottom-16 md:bottom-0 left-0 right-0 z-[60] bg-white border-t border-surface-container shadow-[0px_-10px_40px_rgba(42,52,40,0.2)] pb-safe"
             >
               <div className="max-w-[1280px] mx-auto px-4 md:px-6 py-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-6">
                 <div className="flex items-center justify-between w-full md:w-auto gap-4 md:gap-8">

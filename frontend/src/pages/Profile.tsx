@@ -84,7 +84,7 @@ export default function Profile() {
     <div className="min-h-screen bg-background flex flex-col">
       <Header />
 
-      <main className="flex-1 pt-32 pb-20 max-w-[1280px] mx-auto px-4 md:px-6 w-full page-transition">
+      <main className="flex-1 pt-32 pb-36 md:pb-20 max-w-[1280px] mx-auto px-4 md:px-6 w-full page-transition">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Left Column: Account Info */}
           <div className="lg:col-span-5 space-y-6">

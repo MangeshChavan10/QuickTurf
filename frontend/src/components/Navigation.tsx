@@ -249,7 +249,7 @@ export function Header({ simplified = false }: { simplified?: boolean }) {
 
 export function Footer() {
   return (
-    <footer className="w-full border-t border-surface-container bg-white py-12 mt-auto">
+    <footer className="w-full border-t border-surface-container bg-white py-12 mt-auto mb-16 md:mb-0">
       <div className="max-w-[1280px] mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
         <div className="flex flex-col items-center md:items-start gap-4">
           <Link to="/" className="flex items-center gap-3 group">

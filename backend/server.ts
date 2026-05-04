@@ -725,19 +725,22 @@ async function startServer() {
       let simulationReason = "";
       const mailTransporter = getTransporter();
       if (email && mailTransporter) {
-        // Send email in the background to prevent Google's 2-4 second SMTP delay from freezing the UI
-        mailTransporter.sendMail({
-          from: `"QuickTurf" <${process.env.SMTP_USER}>`,
-          replyTo: process.env.SMTP_USER,
-          to: email,
-          subject: "QuickTurf Login OTP",
-          text: `Your OTP for QuickTurf is: ${otp}`,
-          html: `<p>Your QuickTurf OTP is: <strong>${otp}</strong></p><p>This code expires in 5 minutes.</p>`
-        }).then((info) => {
-          console.log(`\n[OTP] 🚀 Google SMTP Accepted Email! Message ID: ${info.messageId}`);
-        }).catch((mailError: any) => {
-          console.error("\n[OTP] ❌ Background mail send error:", mailError.message);
-        });
+        // Fire-and-forget: send email in background without blocking the response
+        (async () => {
+          try {
+            const info = await mailTransporter.sendMail({
+              from: `"QuickTurf" <${process.env.SMTP_USER}>`,
+              replyTo: process.env.SMTP_USER,
+              to: email,
+              subject: "QuickTurf Login OTP",
+              text: `Your OTP for QuickTurf is: ${otp}`,
+              html: `<p>Your QuickTurf OTP is: <strong>${otp}</strong></p><p>This code expires in 5 minutes.</p>`
+            });
+            console.log(`\n[OTP] 🚀 Google SMTP Accepted Email! Message ID: ${info.messageId}`);
+          } catch (mailError: any) {
+            console.error("\n[OTP] ❌ Background mail send error:", mailError.message);
+          }
+        })();
       } else {
         isSimulated = true;
         simulationReason = !mailTransporter ? "SMTP credentials missing" : "Phone identifier provided";

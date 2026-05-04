@@ -57,7 +57,7 @@ export default function About() {
     <div className="min-h-screen bg-background flex flex-col">
       <Header />
 
-      <main className="flex-1 pt-32 pb-20 w-full page-transition">
+      <main className="flex-1 pt-32 pb-36 md:pb-20 w-full page-transition">
         {/* Philosphy Hero */}
         <section className="max-w-[1280px] mx-auto px-4 md:px-6 mb-16">
           <div className="max-w-3xl">

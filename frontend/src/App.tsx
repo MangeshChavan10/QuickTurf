@@ -80,11 +80,12 @@ export default function App() {
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          {/* Chatbot and MobileBottomNav must be inside Router to use useLocation/useNavigate */}
+          <Chatbot />
+          <MobileBottomNav />
         </Router>
         </ToastProvider>
       </AuthProvider>
-      <Chatbot />
-      <MobileBottomNav />
     </>
   );
 }

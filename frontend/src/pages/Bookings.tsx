@@ -179,7 +179,7 @@ export default function Bookings() {
         )}
       </AnimatePresence>
 
-      <main className="flex-1 pt-32 pb-20 max-w-[1280px] mx-auto px-4 md:px-6 w-full page-transition">
+      <main className="flex-1 pt-32 pb-36 md:pb-20 max-w-[1280px] mx-auto px-4 md:px-6 w-full page-transition">
         <div className="mb-12">
           <h1 className="text-4xl md:text-5xl font-serif text-black mb-4">My Bookings</h1>
           <p className="text-secondary font-bold italic opacity-80">Your upcoming sessions and match history.</p>
