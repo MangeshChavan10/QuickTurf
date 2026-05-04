@@ -14,9 +14,13 @@ export default function Checkout() {
   const { user, token } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const turf = location.state?.turf;
-  const selectedSlot = location.state?.selectedSlot;
-  const selectedDate = location.state?.selectedDate || "Today";
+  // First try location.state (direct navigation), then fallback to sessionStorage (post-login redirect)
+  const pendingStateStr = sessionStorage.getItem('pendingBooking');
+  const pendingState = pendingStateStr ? JSON.parse(pendingStateStr) : null;
+  
+  const turf = location.state?.turf || pendingState?.turf;
+  const selectedSlot = location.state?.selectedSlot || pendingState?.selectedSlot;
+  const selectedDate = location.state?.selectedDate || pendingState?.selectedDate || "Today";
 
   const isNightSlot = (timeStr: string) => {
     if (!timeStr) return false;
@@ -38,9 +42,12 @@ export default function Checkout() {
 
   useEffect(() => {
     if (!user) {
-      navigate("/");
+      navigate("/login", { state: { from: { pathname: '/checkout' } } });
+    } else if (pendingStateStr) {
+      // Clean up the session storage once successfully loaded to prevent stale data
+      sessionStorage.removeItem('pendingBooking');
     }
-  }, [user, navigate]);
+  }, [user, navigate, pendingStateStr]);
 
   if (!turf) {
     return (

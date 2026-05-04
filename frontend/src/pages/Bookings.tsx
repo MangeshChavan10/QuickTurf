@@ -328,9 +328,23 @@ export default function Bookings() {
 
                     if (booking.status === 'Pending') {
                       return (
-                        <div className="grid grid-cols-2 gap-3 mt-2">
-                          <button onClick={() => window.open(mapsUrl, '_blank')} className="py-4 bg-white text-black font-bold text-sm rounded-[10px] hover:bg-surface-container/50 transition-colors">Get directions</button>
-                          <button onClick={() => setConfirmId(booking._id)} className="py-4 bg-rose-50 text-rose-600 font-bold text-sm rounded-[10px] hover:bg-rose-100 transition-colors">Cancel Request</button>
+                        <div className="flex flex-col gap-3 mt-2">
+                          <div className="text-sm font-bold text-amber-600 bg-amber-50 p-3 rounded-[10px] text-center border border-amber-200 flex items-center justify-center gap-2">
+                            <Clock className="w-4 h-4" />
+                            Time remaining to pay: <PendingCountdown createdAt={booking.createdAt} onExpire={() => {
+                              if (booking.status !== 'Cancelled') {
+                                handleCancel(booking._id);
+                              }
+                            }} />
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <button onClick={() => handleCancel(booking._id)} disabled={cancellingId === booking._id} className="py-4 bg-rose-50 text-rose-600 font-bold text-sm rounded-[10px] hover:bg-rose-100 transition-colors">
+                              {cancellingId === booking._id ? "Cancelling..." : "Cancel"}
+                            </button>
+                            <button onClick={() => navigate('/checkout', { state: { turf: booking.turfId, selectedSlot: booking.time, selectedDate: booking.date } })} className="py-4 bg-primary text-white font-bold text-sm rounded-[10px] hover:brightness-110 transition-colors">
+                              Proceed to Payment
+                            </button>
+                          </div>
                         </div>
                       );
                     }
@@ -484,4 +498,30 @@ export default function Bookings() {
       <Footer />
     </div>
   );
+}
+
+export function PendingCountdown({ createdAt, onExpire }: { createdAt: string, onExpire: () => void }) {
+  const [timeLeft, setTimeLeft] = useState(() => {
+    const expiresAt = new Date(createdAt).getTime() + 5 * 60 * 1000;
+    return Math.max(0, expiresAt - Date.now());
+  });
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const expiresAt = new Date(createdAt).getTime() + 5 * 60 * 1000;
+      const left = Math.max(0, expiresAt - Date.now());
+      setTimeLeft(left);
+      if (left <= 0) {
+        clearInterval(interval);
+        onExpire();
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [createdAt, onExpire]);
+
+  if (timeLeft <= 0) return <span>Expired</span>;
+
+  const mins = Math.floor(timeLeft / 60000);
+  const secs = Math.floor((timeLeft % 60000) / 1000);
+  return <span>{mins}:{secs.toString().padStart(2, '0')}</span>;
 }

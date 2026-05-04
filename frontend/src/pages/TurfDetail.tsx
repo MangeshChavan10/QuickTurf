@@ -508,18 +508,18 @@ export default function TurfDetail() {
               initial={{ y: 100 }}
               animate={{ y: 0 }}
               exit={{ y: 100 }}
-              className="fixed bottom-0 left-0 right-0 z-[60] bg-white border-t border-surface-container shadow-[0px_-10px_40px_rgba(42,52,40,0.2)]"
+              className="fixed bottom-0 left-0 right-0 z-[60] bg-white border-t border-surface-container shadow-[0px_-10px_40px_rgba(42,52,40,0.2)] pb-safe"
             >
-              <div className="max-w-[1280px] mx-auto px-6 py-5 flex flex-col md:flex-row items-center justify-between gap-6">
-                <div className="flex items-center gap-8">
+              <div className="max-w-[1280px] mx-auto px-4 md:px-6 py-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-6">
+                <div className="flex items-center justify-between w-full md:w-auto gap-4 md:gap-8">
                   <div className="hidden sm:block">
                     <p className="text-[10px] font-black text-secondary uppercase tracking-widest mb-1 opacity-60">Venue</p>
-                    <p className="font-bold text-on-background text-lg line-clamp-1">{turf.name}</p>
+                    <p className="font-bold text-on-background text-base md:text-lg line-clamp-1">{turf.name}</p>
                   </div>
                   <div className="w-px h-10 bg-surface-container hidden sm:block"></div>
-                  <div>
+                  <div className="flex-1 md:flex-none">
                     <p className="text-[10px] font-black text-secondary uppercase tracking-widest mb-1 opacity-60">Session</p>
-                    <p className="font-bold text-primary text-lg">{selectedDate.date} {selectedDate.month} • {formatSlotRange(selectedSlots.join(", "))}</p>
+                    <p className="font-bold text-primary text-sm md:text-lg">{selectedDate.date} {selectedDate.month} • {formatSlotRange(selectedSlots.join(", "))}</p>
                   </div>
                   <div className="w-px h-10 bg-surface-container hidden md:block"></div>
                   <div className="hidden md:block">
@@ -528,14 +528,26 @@ export default function TurfDetail() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 w-full md:w-auto">
+                <div className="flex items-center gap-4 w-full md:w-auto border-t border-surface-container md:border-0 pt-3 md:pt-0">
                   <div className="flex-1 md:hidden">
-                    <p className="text-[10px] font-black text-secondary uppercase tracking-widest mb-1 opacity-60">Price</p>
-                    <p className="font-serif font-bold text-2xl text-on-background">₹{(turf.price * selectedSlots.length).toLocaleString()}</p>
+                    <p className="text-[10px] font-black text-secondary uppercase tracking-widest mb-1 opacity-60">Total Price</p>
+                    <p className="font-serif font-bold text-xl text-on-background">₹{(turf.price * selectedSlots.length).toLocaleString()}</p>
                   </div>
                   <button
-                    onClick={() => navigate('/checkout', { state: { turf, selectedSlot: selectedSlots.join(", "), selectedDate: `${selectedDate.day} ${selectedDate.date} ${selectedDate.month}` } })}
-                    className="flex-[2] md:flex-none px-12 py-5 bg-accent text-white font-bold text-lg rounded-full shadow-2xl hover:brightness-110 active:scale-95 transition-all font-serif flex items-center justify-center gap-4 group"
+                    onClick={() => {
+                      const bookingState = { 
+                        turf, 
+                        selectedSlot: selectedSlots.join(", "), 
+                        selectedDate: `${selectedDate.day} ${selectedDate.date} ${selectedDate.month}` 
+                      };
+                      if (!user) {
+                        sessionStorage.setItem('pendingBooking', JSON.stringify(bookingState));
+                        navigate('/login', { state: { from: { pathname: '/checkout' } } });
+                      } else {
+                        navigate('/checkout', { state: bookingState });
+                      }
+                    }}
+                    className="flex-none shrink-0 px-5 md:px-12 py-2.5 md:py-5 bg-accent text-white font-bold text-xs md:text-lg rounded-full shadow-lg hover:brightness-110 active:scale-95 transition-all font-serif flex items-center justify-center gap-1.5 md:gap-4 group"
                   >
                     Confirm Booking
                     <span className="group-hover:translate-x-1 transition-transform">→</span>

@@ -1248,6 +1248,19 @@ async function startServer() {
         return res.status(409).json({ error: "This cancellation is already being processed. Please wait." });
       }
 
+      // ── If the booking is just a Pending Request (No payment made) ──
+      if (booking.status === 'Pending') {
+        booking.status = 'Cancelled';
+        booking.cancelledAt = new Date();
+        booking.cancelIdempotencyKey = idempotencyKey;
+        await booking.save();
+        return res.json({
+          success: true,
+          message: 'Booking request cancelled successfully. No payment was captured.',
+          noRefund: true
+        });
+      }
+
       // ── HARD BLOCK: No cancellations within 6 hours of start ──
       // (Inline quick parse to avoid code duplication before full parseSlotTime is defined below)
       const _quickParseDate = (dateStr: string, timeStr: string): Date => {
@@ -1428,6 +1441,7 @@ async function startServer() {
       console.error('[Cancel] Error:', error);
       res.status(500).json({ error: "Failed to cancel booking" });
     }
+
   });
 
   app.put("/api/bookings/:id/reviewed", async (req, res) => {
@@ -1715,12 +1729,12 @@ async function startServer() {
 
   // ================= BOOKING REMINDER CRON JOB =================
   cron.schedule('* * * * *', async () => {
-    // ── Task 1: Expire stale Pending bookings older than 10 minutes ──
+    // ── Task 1: Expire stale Pending bookings older than 5 minutes ──
     try {
-      const tenMinsAgo = new Date(Date.now() - 10 * 60 * 1000);
+      const fiveMinsAgo = new Date(Date.now() - 5 * 60 * 1000);
       const expired = await Booking.deleteMany({
         status: 'Pending',
-        createdAt: { $lt: tenMinsAgo }
+        createdAt: { $lt: fiveMinsAgo }
       });
       if (expired.deletedCount > 0) {
         console.log(`[Cron] Released ${expired.deletedCount} expired pending booking lock(s)`);
