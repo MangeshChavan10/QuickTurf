@@ -58,9 +58,10 @@ const turfSchema = new mongoose.Schema({
     location: { type: String, required: true },
     subLocation: { type: String, required: true },
     description: { type: String },
-    type: { type: String, required: true },
+    type: { type: [String], required: true },
     facilities: [String],
     amenities: [String],
+    contactNumber: { type: String },
     host: {
         name: String,
         avatar: String,
@@ -70,6 +71,8 @@ const turfSchema = new mongoose.Schema({
         lat: Number,
         lng: Number
     },
+    isApproved: { type: Boolean, default: false },
+    isFeatured: { type: Boolean, default: false },
     isDisabled: { type: Boolean, default: false }, // superadmin can disable individual turfs
     disabledReason: { type: String, default: null }
 });
@@ -286,19 +289,34 @@ async function startServer() {
     });
     app.post("/api/admin/turfs", authenticateAdmin, upload.single('image'), async (req, res) => {
         try {
-            const { name, price, location, subLocation, type } = req.body;
+            const { name, price, location, subLocation, type, description, contactNumber, facilities, amenities } = req.body;
             const imagePath = req.file ? `/uploads/${req.file.filename}` : "";
+            
+            if (!name || !price || !location || !subLocation || !type || !description || !contactNumber || !imagePath) {
+                return res.status(400).json({ error: "All fields including image and contact number are required." });
+            }
+
             const turf = new Turf({
                 ownerId: req.user._id,
-                name, price, location, subLocation, type,
+                name, 
+                price: Number(price), 
+                location, 
+                subLocation, 
+                type,
+                description,
+                contactNumber,
+                facilities: Array.isArray(facilities) ? facilities : (facilities ? facilities.split(',').map(f => f.trim()) : []),
+                amenities: Array.isArray(amenities) ? amenities : (amenities ? amenities.split(',').map(a => a.trim()) : []),
                 image: imagePath,
                 rating: 5.0,
-                reviewCount: 0
+                reviewCount: 0,
+                isApproved: false
             });
             await turf.save();
             res.json({ success: true, turf });
         }
         catch (error) {
+            console.error("Turf creation error:", error);
             res.status(500).json({ error: "Failed to create turf" });
         }
     });
@@ -611,6 +629,30 @@ async function startServer() {
             res.status(500).json({ error: "Failed to fetch turfs" });
         }
     });
+    app.post("/api/superadmin/turfs/:id/approve", authenticateSuperAdmin, async (req, res) => {
+        try {
+            const turf = await Turf.findByIdAndUpdate(req.params.id, { isApproved: true }, { new: true });
+            if (!turf)
+                return res.status(404).json({ error: "Turf not found" });
+            res.json({ success: true, turf });
+        }
+        catch (error) {
+            res.status(500).json({ error: "Failed to approve turf" });
+        }
+    });
+    app.post("/api/superadmin/turfs/:id/toggle-featured", authenticateSuperAdmin, async (req, res) => {
+        try {
+            const turf = await Turf.findById(req.params.id);
+            if (!turf)
+                return res.status(404).json({ error: "Turf not found" });
+            turf.isFeatured = !turf.isFeatured;
+            await turf.save();
+            res.json({ success: true, isFeatured: turf.isFeatured });
+        }
+        catch (error) {
+            res.status(500).json({ error: "Failed to toggle featured status" });
+        }
+    });
     app.post("/api/superadmin/turfs/:id/disable", authenticateSuperAdmin, async (req, res) => {
         try {
             const { reason } = req.body;
@@ -793,48 +835,11 @@ async function startServer() {
     });
     app.get("/api/turfs", async (req, res) => {
         try {
-            let turfs = await Turf.find();
-            if (turfs.length === 0) {
-                // If DB is empty, return the hardcoded Match Point Turf
-                let realRating = 4.98;
-                let realReviewCount = 342;
-                try {
-                    const reviews = await Review.find({ turfId: "1" });
-                    if (reviews.length > 0) {
-                        realReviewCount = reviews.length;
-                        realRating = Number((reviews.reduce((acc, r) => acc + r.rating, 0) / realReviewCount).toFixed(2));
-                    }
-                    else {
-                        // Real 0 rating if no reviews
-                        realRating = 0;
-                        realReviewCount = 0;
-                    }
-                }
-                catch (e) { }
-                return res.json([{
-                        id: "1",
-                        _id: "650000000000000000000001", // Mock ID
-                        name: "Match Point Turf",
-                        image: "/images/turf-night.jpg",
-                        gallery: [
-                            "/images/turf-night.jpg",
-                            "/images/turf-trophy.jpg",
-                            "/images/turf-day.jpg",
-                            "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&q=80&w=1200",
-                            "https://images.unsplash.com/photo-1589487391730-58f20eb2c308?auto=format&fit=crop&q=80&w=1200"
-                        ],
-                        price: 1000,
-                        rating: realRating,
-                        reviewCount: realReviewCount,
-                        location: "Solapur",
-                        subLocation: "Civil Hospital Road",
-                        description: "Experience the ultimate matchday at Match Point Turf. Featuring high-grade artificial grass, professional floodlights for night sessions, and a dedicated trophy facility for your tournaments of Solapur.",
-                        amenities: ["Night LED Floodlights", "Tournament Trophy Support", "Changing Rooms", "Free Parking", "Drinking Water", "First Aid"],
-                        distance: "1.2 km away",
-                        host: { name: "Match Point Team", avatar: "", years: 5 },
-                        coordinates: { lat: 17.6599, lng: 75.9064 }
-                    }]);
-            }
+            const { featured } = req.query;
+            let query = { isApproved: true };
+            if (featured === 'true')
+                query.isFeatured = true;
+            let turfs = await Turf.find(query);
             // If we have turfs in DB, we should dynamically calculate the rating to ensure it's not stuck on fake ratings
             const turfsWithRealRatings = await Promise.all(turfs.map(async (turf) => {
                 const turfObj = turf.toObject ? turf.toObject() : turf;
@@ -865,70 +870,29 @@ async function startServer() {
     });
     app.get("/api/turfs/:id", async (req, res) => {
         try {
-            if (req.params.id === "1" || req.params.id === "650000000000000000000001") {
-                let realRating = 4.98;
-                let realReviewCount = 342;
-                try {
-                    const reviews = await Review.find({ turfId: req.params.id });
-                    if (reviews.length > 0) {
-                        realReviewCount = reviews.length;
-                        realRating = Number((reviews.reduce((acc, r) => acc + r.rating, 0) / realReviewCount).toFixed(2));
-                    }
-                    else {
-                        realRating = 0;
-                        realReviewCount = 0;
-                    }
-                }
-                catch (e) { }
-                return res.json({
-                    id: "1",
-                    _id: "650000000000000000000001",
-                    name: "Match Point Turf",
-                    image: "/images/turf-night.jpg",
-                    gallery: [
-                        "/images/turf-night.jpg",
-                        "/images/turf-trophy.jpg",
-                        "/images/turf-day.jpg",
-                        "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&q=80&w=1200",
-                        "https://images.unsplash.com/photo-1589487391730-58f20eb2c308?auto=format&fit=crop&q=80&w=1200"
-                    ],
-                    price: 1000,
-                    rating: realRating,
-                    reviewCount: realReviewCount,
-                    location: "Solapur",
-                    subLocation: "Civil Hospital Road",
-                    description: "Experience the ultimate matchday at Match Point Turf. Featuring high-grade artificial grass, professional floodlights for night sessions, and a dedicated trophy facility for your tournaments. The preferred destination for serious athletes in Solapur.",
-                    amenities: ["Night LED Floodlights", "Tournament Trophy Support", "Changing Rooms", "Free Parking", "Drinking Water", "First Aid"],
-                    distance: "1.2 km away",
-                    host: { name: "Match Point Team", avatar: "", years: 5 },
-                    coordinates: { lat: 17.6599, lng: 75.9064 }
-                });
+            const turfId = req.params.id;
+            let turf = await Turf.findById(turfId);
+            // Support legacy ID "1" by finding the main Match Point Turf
+            if (!turf && turfId === "1") {
+                turf = await Turf.findOne({ name: /Match Point/i });
             }
-            const turf = await Turf.findById(req.params.id);
-            if (turf) {
-                const turfObj = turf.toObject();
-                const reviews = await Review.find({ turfId: turfObj._id.toString() });
-                if (reviews.length > 0) {
-                    turfObj.reviewCount = reviews.length;
-                    turfObj.rating = Number((reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(2));
-                }
-                else {
-                    const mockReviews = await Review.find({ turfId: turfObj._id.toString() });
-                    if (mockReviews.length > 0) {
-                        turfObj.reviewCount = mockReviews.length;
-                        turfObj.rating = Number((mockReviews.reduce((acc, r) => acc + r.rating, 0) / mockReviews.length).toFixed(2));
-                    }
-                    else {
-                        turfObj.rating = 0;
-                        turfObj.reviewCount = 0;
-                    }
-                }
-                return res.json(turfObj);
+            if (!turf)
+                return res.status(404).json({ error: "Turf not found" });
+            const turfObj = turf.toObject();
+            const reviews = await Review.find({ turfId: turf._id.toString() });
+            if (reviews.length > 0) {
+                turfObj.reviewCount = reviews.length;
+                turfObj.rating = Number((reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(2));
             }
-            res.status(404).json({ error: "Turf not found" });
+            else {
+                turfObj.rating = turfObj.rating || 0;
+                turfObj.reviewCount = turfObj.reviewCount || 0;
+            }
+            res.json(turfObj);
         }
         catch (error) {
-            res.status(404).json({ error: "Turf not found" });
+            console.error("Fetch turf error:", error);
+            res.status(500).json({ error: "Failed to fetch turf" });
         }
     });
     // ================= REVIEWS =================
@@ -1375,49 +1339,71 @@ async function startServer() {
             res.json({ success: true });
         }
         catch (error) {
-            console.error("Booking error:", error);
-            res.status(500).json({ success: false });
+            console.error("Verify Payment Error:", error);
+            res.status(500).json({ success: false, error: "Payment verification failed" });
         }
     });
-    // Seed Data Route (Temporary)
+
     app.post("/api/seed", async (req, res) => {
-        const { force } = req.body;
-        const count = await Turf.countDocuments();
-        if (count > 0 && !force)
-            return res.json({ message: "Already seeded. Use {force: true} to reset." });
-        if (force) {
-            await Turf.deleteMany({});
-        }
-        const initialTurfs = [
-            {
-                name: "Match Point Turf",
-                image: "/images/turf-night.jpg",
-                gallery: [
-                    "/images/turf-night.jpg",
-                    "/images/turf-trophy.jpg",
-                    "/images/turf-day.jpg",
-                    "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&q=80&w=1200",
-                    "https://images.unsplash.com/photo-1589487391730-58f20eb2c308?auto=format&fit=crop&q=80&w=1200"
-                ],
-                price: 1000,
-                rating: 4.98,
-                reviewCount: 342,
-                location: "Civil Hospital Road, Solapur",
-                subLocation: "Solapur",
-                description: "Experience the ultimate matchday at Match Point Turf. Featuring high-grade artificial grass, professional floodlights for night sessions, and a dedicated trophy facility for your tournaments. The preferred destination for serious athletes in Solapur.",
-                type: "Football / Cricket / Box Cricket",
-                facilities: ["FIFA Grade Turf", "LED Floodlights", "Tournament Trophy Support", "Changing Rooms"],
-                amenities: ["Night LED Floodlights", "Tournament Trophy Support", "Changing Rooms", "Free Parking", "Drinking Water", "First Aid"],
-                host: {
-                    name: "Match Point Team",
-                    avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuD9OLYFJoFVIRdzeuJxH5vnWGU49nraZMiWq5TkrxpBEg-s7br2RFJrGdKS8fhVTmGmNLgigfKEPMuvxXTUmQRsAodE7TIrNpGxZq5vmjkcXQk2rKOjL3LrshAOcqQyA7mVJi62eT864uDA7qo7kdBORgq4NDc3UGQHod7wbbH9YBDBEu7ni1tPzvSkPQbjsv_12OSo14JlqYtv3c3xB1Nt8eUp8NiJAXTKK-0xHtIA0YWlVZtPo4V6FFf7FQxOTx45uVk7-P-kCpA",
-                    years: 5
-                },
-                coordinates: { lat: 17.6599, lng: 75.9064 }
+        try {
+            const { force } = req.body;
+            const count = await Turf.countDocuments();
+            if (count > 0 && !force)
+                return res.json({ message: "Already seeded. Use {force: true} to reset." });
+            if (force) {
+                await Turf.deleteMany({});
             }
-        ];
-        await Turf.insertMany(initialTurfs);
-        res.json({ message: "Seeded successfully with Match Point Turf" });
+            // Find or create the owner
+            const ownerEmail = "mangeshchavan374@gmail.com";
+            let owner = await User.findOne({ email: ownerEmail });
+            if (!owner) {
+                owner = new User({
+                    name: "Mangesh Chavan",
+                    email: ownerEmail,
+                    role: "admin",
+                    isApproved: true
+                });
+                await owner.save();
+            }
+            const initialTurfs = [
+                {
+                    ownerId: owner._id,
+                    name: "Match Point Turf",
+                    image: "/images/turf-night.jpg",
+                    gallery: [
+                        "/images/turf-night.jpg",
+                        "/images/turf-trophy.jpg",
+                        "/images/turf-day.jpg",
+                        "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&q=80&w=1200",
+                        "https://images.unsplash.com/photo-1589487391730-58f20eb2c308?auto=format&fit=crop&q=80&w=1200"
+                    ],
+                    price: 10,
+                    rating: 4.98,
+                    reviewCount: 342,
+                    location: "Civil Hospital Road, Solapur",
+                    subLocation: "Solapur",
+                    description: "Experience the ultimate matchday at Match Point Turf. Featuring high-grade artificial grass, professional floodlights for night sessions, and a dedicated trophy facility for your tournaments. The preferred destination for serious athletes in Solapur.",
+                    type: "Football / Cricket / Box Cricket",
+                    facilities: ["FIFA Grade Turf", "LED Floodlights", "Tournament Trophy Support", "Changing Rooms"],
+                    amenities: ["Night LED Floodlights", "Tournament Trophy Support", "Changing Rooms", "Free Parking", "Drinking Water", "First Aid"],
+                    contactNumber: "+91 98765 43210",
+                    host: {
+                        name: "Match Point Team",
+                        avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuD9OLYFJoFVIRdzeuJxH5vnWGU49nraZMiWq5TkrxpBEg-s7br2RFJrGdKS8fhVTmGmNLgigfKEPMuvxXTUmQRsAodE7TIrNpGxZq5vmjkcXQk2rKOjL3LrshAOcqQyA7mVJi62eT864uDA7qo7kdBORgq4NDc3UGQHod7wbbH9YBDBEu7ni1tPzvSkPQbjsv_12OSo14JlqYtv3c3xB1Nt8eUp8NiJAXTKK-0xHtIA0YWlVZtPo4V6FFf7FQxOTx45uVk7-P-kCpA",
+                        years: 5
+                    },
+                    coordinates: { lat: 17.6599, lng: 75.9064 },
+                    isApproved: true,
+                    isFeatured: true
+                }
+            ];
+            await Turf.insertMany(initialTurfs);
+            res.json({ message: "Seeded successfully with Match Point Turf owned by " + ownerEmail });
+        }
+        catch (error) {
+            console.error("Seed error:", error);
+            res.status(500).json({ error: "Failed to seed data" });
+        }
     });
     // API only in this split setup
     const distPath = path.join(process.cwd(), "../frontend/dist");

@@ -7,7 +7,9 @@ export interface Review {
 }
 
 export interface Turf {
-  id: string;
+  id?: string;
+  _id?: string;
+  isFeatured?: boolean;
   name: string;
   location: string;
   subLocation: string;
@@ -18,6 +20,7 @@ export interface Turf {
   gallery: string[];
   distance?: string;
   description: string;
+  type: string | string[];
   host: {
     name: string;
     avatar: string;
@@ -47,6 +50,7 @@ export const TURFS: Turf[] = [
       "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?auto=format&fit=crop&q=80&w=1200"
     ],
     description: "Experience the ultimate matchday at Match Point Turf. Featuring high-grade artificial grass, professional floodlights for night sessions, and a dedicated trophy facility for your tournaments. The preferred destination for serious athletes in Solapur.",
+    type: "Football / Cricket / Box Cricket",
     host: {
       name: "Match Point Team",
       avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuD9OLYFJoFVIRdzeuJxH5vnWGU49nraZMiWq5TkrxpBEg-s7br2RFJrGdKS8fhVTmGmNLgigfKEPMuvxXTUmQRsAodE7TIrNpGxZq5vmjkcXQk2rKOjL3LrshAOcqQyA7mVJi62eT864uDA7qo7kdBORgq4NDc3UGQHod7wbbH9YBDBEu7ni1tPzvSkPQbjsv_12OSo14JlqYtv3c3xB1Nt8eUp8NiJAXTKK-0xHtIA0YWlVZtPo4V6FFf7FQxOTx45uVk7-P-kCpA",

@@ -30,7 +30,7 @@ export function TurfCard({ turf }: { turf: any }) {
 
         {/* Book Now CTA — always visible on mobile, slides up on desktop hover */}
         <div className="absolute bottom-0 left-0 right-0 p-3 md:translate-y-full md:group-hover:translate-y-0 transition-transform duration-300">
-          <div className="flex items-center justify-center gap-2 bg-primary text-white py-2.5 px-4 rounded-full font-bold text-xs uppercase tracking-widest shadow-lg">
+          <div className="flex items-center justify-center gap-2 bg-primary text-on-primary py-2.5 px-4 rounded-full font-bold text-xs uppercase tracking-widest shadow-lg">
             Book Now <ArrowRight className="w-3.5 h-3.5" />
           </div>
         </div>
@@ -54,7 +54,9 @@ export function TurfCard({ turf }: { turf: any }) {
 
       <div className="p-4">
         <h3 className="font-serif font-bold text-on-background text-lg group-hover:text-primary transition-colors leading-tight">{turf.name}</h3>
-        <p className="text-secondary text-sm font-sans mt-0.5">{turf.location}</p>
+        <p className="text-secondary text-sm font-sans mt-0.5">
+          {turf.location} • {Array.isArray(turf.type) ? turf.type.join(" • ") : turf.type}
+        </p>
         <div className="mt-3 flex items-center justify-between">
           <div className="flex items-baseline gap-1">
             <span className="font-bold text-on-background text-lg">₹{turf.price.toLocaleString()}</span>

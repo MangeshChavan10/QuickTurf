@@ -1,5 +1,6 @@
 import { apiFetch } from "../../lib/api";
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { AdminLayout } from "../../components/AdminLayout";
 import { IndianRupee, MapPin, CalendarCheck, XCircle, TrendingUp, BarChart3 } from "lucide-react";
@@ -68,6 +69,22 @@ export default function Dashboard() {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {[1,2,3,4,5].map(i => <div key={i} className="bg-white h-28 rounded-[24px] border border-surface-container animate-pulse" />)}
           </div>
+        ) : data && data.activeTurfs === 0 ? (
+          <div className="bg-white rounded-[32px] border border-surface-container p-12 text-center flex flex-col items-center gap-6 shadow-sm">
+            <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center">
+              <MapPin className="w-10 h-10 text-primary" />
+            </div>
+            <div className="max-w-md space-y-2">
+              <h2 className="text-2xl font-serif font-bold text-on-background">List your first turf</h2>
+              <p className="text-secondary">To start receiving bookings and seeing analytics, you first need to list your turf. Our team will verify it within 24 hours.</p>
+            </div>
+            <Link 
+              to="/admin/turfs/new" 
+              className="px-8 py-4 bg-primary text-white rounded-full font-bold shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all flex items-center gap-2"
+            >
+              Add Your First Turf <BarChart3 className="w-4 h-4" />
+            </Link>
+          </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {kpis.map((kpi, i) => (
@@ -89,7 +106,7 @@ export default function Dashboard() {
         )}
 
         {/* Revenue Chart + Turf Breakdown */}
-        {data && (
+        {data && data.activeTurfs > 0 && (
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
             {/* Monthly Revenue Bar Chart */}
             <motion.div

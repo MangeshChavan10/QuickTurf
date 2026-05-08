@@ -1,12 +1,13 @@
-import { useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect, type FormEvent } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { MapPin, ArrowRight, Key, Mail, Building2, Lock, AlertCircle, CheckCircle2, Trophy } from "lucide-react";
 import { apiFetch } from "../../lib/api";
 import { motion, AnimatePresence } from "motion/react";
 
 export default function AdminAuth() {
-  const [isLogin, setIsLogin] = useState(true);
+  const location = useLocation();
+  const [isLogin, setIsLogin] = useState(!location.pathname.includes('register'));
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -16,6 +17,12 @@ export default function AdminAuth() {
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    setIsLogin(!location.pathname.includes('register'));
+    setError("");
+    setOtpSent(false);
+  }, [location.pathname]);
 
   const handleSendOtp = async (e: FormEvent) => {
     e.preventDefault();
@@ -295,7 +302,7 @@ export default function AdminAuth() {
           <p className="text-center text-secondary font-bold text-sm uppercase tracking-widest">
             {isLogin ? "New to QuickTurf?" : "Already a partner?"}{" "}
             <button 
-              onClick={() => { setIsLogin(!isLogin); setError(""); setOtpSent(false); }}
+              onClick={() => navigate(isLogin ? "/admin/register" : "/admin/login")}
               className="text-primary hover:underline ml-1 cursor-pointer"
             >
               {isLogin ? "Register your turf" : "Sign in to dashboard"}

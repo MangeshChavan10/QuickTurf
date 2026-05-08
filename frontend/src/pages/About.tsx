@@ -128,9 +128,9 @@ export default function About() {
           <div className="bg-[#0a1a0e] rounded-[48px] p-8 md:p-20 flex flex-col md:flex-row items-center gap-12 text-white overflow-hidden relative shadow-2xl">
             <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 blur-[120px] rounded-full -translate-x-1/2"></div>
             <div className="flex-1 z-10">
-              <h2 className="text-4xl md:text-5xl font-serif mb-6">Own a turf? Let's grow together.</h2>
+              <h2 className="text-4xl md:text-5xl font-serif mb-6">Own a turf? Grow with <span className="text-primary italic">QuickTurf</span>.</h2>
               <p className="text-lg text-white/70 max-w-md leading-relaxed mb-10">
-                List your venue on QuickTurf and get a steady stream of bookings from Solapur's most active sports community. Zero setup fees. Real-time dashboards. You're in control.
+                Partner with QuickTurf and experience steady month-on-month growth in your monthly bookings and revenue. Advanced real-time dashboards. You're in complete control.
               </p>
               <div className="flex gap-4 mb-10">
                 <ShieldCheck className="text-primary w-12 h-12 shrink-0" />
@@ -150,7 +150,7 @@ export default function About() {
               </Link>
             </div>
             <div className="flex-1 w-full md:w-auto h-80 relative rounded-[32px] overflow-hidden group">
-              <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuBXBQZGdGFXUNbwWYxKEFE5wLZ5-AlDmclDx4P_VdBM27EyIF9JrKC5W4VrY2tqp8EL5bvjRD_JmWVeoqJtu79EcPrKDgvUIeJHe-Mc2mP6d0NIrSqKBSmmZNiGkb8HvTYLdqVmG7fon2q3CWrCBKfFxyUNEOIEdogP_rh-LVbRpgWD84te5rzj8rV4VSHOickLABEz3BoXtQlIM7zJ4bI8B0fkd8vfxZAkibzMXkoor9T9EYf0cguwHLmdm7OsPbdVEBbb2WjLBzw" className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" alt="Venue" />
+              <img src="/images/turf-partner-graph.jpg" className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" alt="QuickTurf Revenue Growth" />
             </div>
           </div>
         </section>

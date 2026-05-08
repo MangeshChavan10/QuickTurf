@@ -12,11 +12,13 @@ interface Turf {
   price: number;
   location: string;
   subLocation?: string;
-  type?: string;
+  type: string[];
   description?: string;
   image?: string;
   rating?: number;
   reviewCount?: number;
+  amenities?: string[];
+  isApproved?: boolean;
 }
 
 export default function Turfs() {
@@ -30,8 +32,15 @@ export default function Turfs() {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState("");
 
-  // Form state (populated when modal opens)
-  const [form, setForm] = useState({ name: "", price: "", location: "", subLocation: "", type: "", description: "" });
+  const [form, setForm] = useState<{
+    name: string;
+    price: string;
+    location: string;
+    subLocation: string;
+    type: string[];
+    description: string;
+    amenities: string[];
+  }>({ name: "", price: "", location: "", subLocation: "", type: [], description: "", amenities: [] });
 
   const openEdit = (turf: Turf) => {
     setEditingTurf(turf);
@@ -40,8 +49,9 @@ export default function Turfs() {
       price: String(turf.price || ""),
       location: turf.location || "",
       subLocation: turf.subLocation || "",
-      type: turf.type || "",
+      type: Array.isArray(turf.type) ? turf.type : [turf.type].filter(Boolean) as string[],
       description: turf.description || "",
+      amenities: turf.amenities || [],
     });
     setSaveSuccess(false);
     setSaveError("");
@@ -130,8 +140,15 @@ export default function Turfs() {
                   </div>
                 </div>
                 <div className="p-6">
-                  <h3 className="font-serif font-bold text-xl text-on-background truncate">{turf.name}</h3>
-                  <div className="flex items-center gap-1.5 mt-2 text-secondary text-sm">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <h3 className="font-serif font-bold text-xl text-on-background truncate flex-1">{turf.name}</h3>
+                    {turf.isApproved ? (
+                      <span className="flex-shrink-0 px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[9px] font-black uppercase tracking-widest border border-emerald-100 rounded-md">Live</span>
+                    ) : (
+                      <span className="flex-shrink-0 px-2 py-0.5 bg-orange-50 text-orange-600 text-[9px] font-black uppercase tracking-widest border border-orange-100 rounded-md">Pending Approval</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1.5 text-secondary text-sm">
                     <MapPinIcon className="w-4 h-4" />
                     <span className="truncate">{turf.location}</span>
                   </div>
@@ -150,6 +167,25 @@ export default function Turfs() {
                       className="flex-1 py-2 text-center text-on-background font-bold bg-surface-container rounded-xl hover:bg-black/5 transition-colors text-sm flex items-center justify-center gap-1.5"
                     >
                       <Pencil className="w-3.5 h-3.5" /> Edit
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (!confirm(`Are you sure you want to delete "${turf.name}"? This action cannot be undone.`)) return;
+                        try {
+                          const res = await fetch(`/api/admin/turfs/${turf._id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+                          if (res.ok) {
+                            setTurfs(prev => prev.filter(t => t._id !== turf._id));
+                          } else {
+                            alert("Failed to delete turf.");
+                          }
+                        } catch {
+                          alert("Something went wrong.");
+                        }
+                      }}
+                      className="p-2 text-rose-500 hover:bg-rose-50 rounded-xl transition-colors"
+                      title="Delete Turf"
+                    >
+                      <X className="w-5 h-5" />
                     </button>
                   </div>
                 </div>
@@ -232,22 +268,52 @@ export default function Turfs() {
                   />
                 </div>
 
-                {/* Type */}
+                {/* Type (Multi-select) */}
                 <div>
-                  <label className="text-[10px] font-bold text-secondary uppercase tracking-widest block mb-1.5">Turf Type</label>
-                  <select
-                    value={form.type}
-                    onChange={e => setForm(f => ({ ...f, type: e.target.value }))}
-                    className="w-full px-4 py-3 rounded-2xl border border-surface-container bg-background text-sm font-medium focus:outline-none focus:border-primary transition-all"
-                  >
-                    <option value="">Select type...</option>
-                    <option value="Football">Football</option>
-                    <option value="Cricket">Cricket</option>
-                    <option value="Badminton">Badminton</option>
-                    <option value="Multi-Sport">Multi-Sport</option>
-                    <option value="Tennis">Tennis</option>
-                    <option value="Basketball">Basketball</option>
-                  </select>
+                  <label className="text-[10px] font-bold text-secondary uppercase tracking-widest block mb-2.5">Turf Type (Select Multiple)</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {["Football", "Cricket", "Badminton", "Multi-Sport", "Tennis", "Basketball"].map(t => (
+                      <label key={t} className="flex items-center gap-2 p-2 rounded-xl border border-surface-container hover:bg-surface-container transition-colors cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={form.type.includes(t)}
+                          onChange={e => {
+                            if (e.target.checked) {
+                              setForm(f => ({ ...f, type: [...f.type, t] }));
+                            } else {
+                              setForm(f => ({ ...f, type: f.type.filter(x => x !== t) }));
+                            }
+                          }}
+                          className="w-4 h-4 rounded-lg accent-primary"
+                        />
+                        <span className="text-xs font-medium">{t}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Amenities (Multi-select) */}
+                <div>
+                  <label className="text-[10px] font-bold text-secondary uppercase tracking-widest block mb-2.5">Amenities</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {["Night LED Floodlights", "Changing Rooms", "Free Parking", "Drinking Water", "First Aid", "Cafeteria"].map(a => (
+                      <label key={a} className="flex items-center gap-2 p-2 rounded-xl border border-surface-container hover:bg-surface-container transition-colors cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={form.amenities.includes(a)}
+                          onChange={e => {
+                            if (e.target.checked) {
+                              setForm(f => ({ ...f, amenities: [...f.amenities, a] }));
+                            } else {
+                              setForm(f => ({ ...f, amenities: f.amenities.filter(x => x !== a) }));
+                            }
+                          }}
+                          className="w-4 h-4 rounded-lg accent-primary"
+                        />
+                        <span className="text-xs font-medium">{a}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Description */}

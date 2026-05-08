@@ -6,6 +6,7 @@ export interface User {
   email: string;
   role: "user" | "admin" | "superadmin";
   isApproved?: boolean;
+  warnings?: { message: string; warnedBy: string; warnedAt: string }[];
 }
 
 interface AuthContextType {

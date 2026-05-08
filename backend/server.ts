@@ -49,7 +49,7 @@ const userSchema = new mongoose.Schema({
   // ── Moderation ──
   warnings: [{
     message: { type: String },
-    warnedBy: { type: String },  // email of admin/superadmin who issued it
+    warnedBy: { type: String }, 
     warnedAt: { type: Date, default: Date.now }
   }],
   isBanned: { type: Boolean, default: false },
@@ -74,9 +74,10 @@ const turfSchema = new mongoose.Schema({
   location: { type: String, required: true },
   subLocation: { type: String, required: true },
   description: { type: String },
-  type: { type: String, required: true },
+  type: { type: [String], required: true },
   facilities: [String],
   amenities: [String],
+  contactNumber: { type: String },
   host: {
     name: String,
     avatar: String,
@@ -86,7 +87,9 @@ const turfSchema = new mongoose.Schema({
     lat: Number,
     lng: Number
   },
-  isDisabled: { type: Boolean, default: false },  // superadmin can disable individual turfs
+  isApproved: { type: Boolean, default: false },
+  isFeatured: { type: Boolean, default: false },
+  isDisabled: { type: Boolean, default: false }, 
   disabledReason: { type: String, default: null }
 });
 
@@ -95,7 +98,7 @@ const bookingSchema = new mongoose.Schema({
   orderId: { type: String, required: true },
   paymentId: { type: String, default: null },
   amount: { type: Number, required: true },
-  status: { type: String, default: 'Confirmed' }, // Confirmed | Pending | Cancelled
+  status: { type: String, default: 'Confirmed' }, 
   date: { type: String, required: true },
   time: { type: String, required: true },
   userEmail: { type: String, required: true },
@@ -178,12 +181,12 @@ const getRazorpay = () => {
   if (!razorpay) {
     const key_id = process.env.RAZORPAY_KEY_ID;
     const key_secret = process.env.RAZORPAY_KEY_SECRET;
-    
+
     if (!key_id || !key_secret) {
       console.warn("Razorpay keys are missing. Payment API will operate in simulation mode.");
       return null;
     }
-    
+
     razorpay = new Razorpay({
       key_id,
       key_secret,
@@ -281,9 +284,7 @@ async function startServer() {
       if (!user || user.role !== 'admin') {
         return res.status(403).json({ error: "Forbidden: Admins only" });
       }
-      if (!user.isApproved) {
-        return res.status(403).json({ error: "Pending Verification" });
-      }
+      // Owners are allowed to access dashboard to manage their turfs even if not yet verified
       req.user = user;
       next();
     } catch (error) {
@@ -327,9 +328,9 @@ async function startServer() {
       if (existing) return res.status(400).json({ error: "Email already exists" });
 
       const hashedPassword = await bcrypt.hash(password, 10);
-      const user = new User({ name, email, password: hashedPassword, role: 'admin' });
+      const user = new User({ name, email, password: hashedPassword, role: 'admin', isApproved: true });
       await user.save();
-      
+
       const token = jwt.sign({ userId: user._id, role: 'admin' }, JWT_SECRET);
       res.json({ token, user: { name: user.name, email: user.email, role: 'admin', isApproved: user.isApproved } });
     } catch (error) {
@@ -355,19 +356,43 @@ async function startServer() {
 
   app.post("/api/admin/turfs", authenticateAdmin, upload.single('image'), async (req: any, res: any) => {
     try {
-      const { name, price, location, subLocation, type } = req.body;
+      const { name, price, location, subLocation, type, description, contactNumber, facilities, amenities } = req.body;
       const imagePath = req.file ? `/uploads/${req.file.filename}` : "";
+
+      if (!name || !price || !location || !subLocation || !type || !description || !contactNumber || !imagePath) {
+        return res.status(400).json({ error: "All fields including image and contact number are required." });
+      }
+
+      const parseArray = (val: any) => {
+        if (!val) return [];
+        if (Array.isArray(val)) return val;
+        try {
+          const parsed = JSON.parse(val);
+          if (Array.isArray(parsed)) return parsed;
+        } catch (e) {}
+        return typeof val === 'string' ? val.split(',').map((s: any) => s.trim()) : [val];
+      };
 
       const turf = new Turf({
         ownerId: req.user._id,
-        name, price, location, subLocation, type,
+        name, 
+        price: Number(price), 
+        location, 
+        subLocation, 
+        type: parseArray(type),
+        description,
+        contactNumber,
+        facilities: parseArray(facilities),
+        amenities: parseArray(amenities),
         image: imagePath,
         rating: 5.0,
-        reviewCount: 0
+        reviewCount: 0,
+        isApproved: false
       });
       await turf.save();
       res.json({ success: true, turf });
     } catch (error) {
+      console.error("Turf creation error:", error);
       res.status(500).json({ error: "Failed to create turf" });
     }
   });
@@ -386,18 +411,31 @@ async function startServer() {
       const turf = await Turf.findOne({ _id: req.params.id, ownerId: req.user._id });
       if (!turf) return res.status(404).json({ error: "Turf not found or access denied" });
 
-      const { name, price, location, subLocation, type, description } = req.body;
+      const { name, price, location, subLocation, type, description, amenities } = req.body;
       if (name) turf.name = name;
       if (price) turf.price = Number(price);
       if (location) turf.location = location;
       if (subLocation !== undefined) turf.subLocation = subLocation;
       if (type) turf.type = type;
       if (description !== undefined) turf.description = description;
+      if (amenities !== undefined) turf.amenities = amenities;
 
       await turf.save();
       res.json({ success: true, turf });
     } catch (error) {
       res.status(500).json({ error: "Failed to update turf" });
+    }
+  });
+
+  app.delete("/api/admin/turfs/:id", authenticateAdmin, async (req: any, res: any) => {
+    try {
+      const turf = await Turf.findOne({ _id: req.params.id, ownerId: req.user._id });
+      if (!turf) return res.status(404).json({ error: "Turf not found or unauthorized" });
+      
+      await Turf.findByIdAndDelete(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete turf" });
     }
   });
 
@@ -541,9 +579,9 @@ async function startServer() {
   app.post("/api/superadmin/setup", async (req, res) => {
     try {
       const { email, password } = req.body;
-      
+
       const hashedPassword = await bcrypt.hash(password, 10);
-      
+
       // Check if user already exists
       let user = await User.findOne({ email });
       if (user) {
@@ -680,6 +718,39 @@ async function startServer() {
     }
   });
 
+  app.post("/api/superadmin/turfs/:id/approve", authenticateSuperAdmin, async (req, res) => {
+    try {
+      const turf = await Turf.findByIdAndUpdate(req.params.id, { isApproved: true }, { new: true });
+      if (!turf) return res.status(404).json({ error: "Turf not found" });
+      res.json({ success: true, turf });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to approve turf" });
+    }
+  });
+
+  app.post("/api/superadmin/turfs/:id/reject", authenticateSuperAdmin, async (req, res) => {
+    try {
+      const turf = await Turf.findByIdAndDelete(req.params.id);
+      if (!turf) return res.status(404).json({ error: "Turf not found" });
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to reject turf" });
+    }
+  });
+
+  app.post("/api/superadmin/turfs/:id/toggle-featured", authenticateSuperAdmin, async (req, res) => {
+    try {
+      const turf = await Turf.findById(req.params.id);
+      if (!turf) return res.status(404).json({ error: "Turf not found" });
+      
+      turf.isFeatured = !turf.isFeatured;
+      await turf.save();
+      res.json({ success: true, isFeatured: turf.isFeatured });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to toggle featured status" });
+    }
+  });
+
   app.post("/api/superadmin/turfs/:id/disable", authenticateSuperAdmin, async (req, res) => {
     try {
       const { reason } = req.body as { reason: string };
@@ -688,6 +759,16 @@ async function startServer() {
       res.json({ success: true, turf });
     } catch (error) {
       res.status(500).json({ error: "Failed to disable turf" });
+    }
+  });
+
+  app.delete("/api/superadmin/turfs/:id", authenticateSuperAdmin, async (req, res) => {
+    try {
+      const turf = await Turf.findByIdAndDelete(req.params.id);
+      if (!turf) return res.status(404).json({ error: "Turf not found" });
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete turf" });
     }
   });
 
@@ -706,7 +787,7 @@ async function startServer() {
     try {
       const { phone, email } = req.body;
       const identifier = (email || phone || "").toString().trim().toLowerCase();
-      
+
       if (!identifier) {
         console.warn("[OTP] Send-OTP failed: No identifier provided", req.body);
         return res.status(400).json({ error: "Email or Phone required" });
@@ -757,8 +838,8 @@ async function startServer() {
       }
       console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
 
-      res.json({ 
-        success: true, 
+      res.json({
+        success: true,
         message: "OTP sent successfully"
       });
     } catch (error) {
@@ -771,7 +852,7 @@ async function startServer() {
     try {
       const { phone, email, otp } = req.body;
       const identifier = (email || phone || "").toString().trim().toLowerCase();
-      
+
       console.log(`[OTP] Verifying for: ${identifier} (OTP: ${otp})`);
 
       if (!identifier || !otp) {
@@ -798,25 +879,25 @@ async function startServer() {
       if (!user) {
         // Return success but don't give a token if user doesn't exist
         // This allows the Signup flow to proceed after verification
-        return res.json({ 
-          success: true, 
-          userExists: false, 
-          message: "OTP verified. Please complete your profile." 
+        return res.json({
+          success: true,
+          userExists: false,
+          message: "OTP verified. Please complete your profile."
         });
       }
 
       // User exists, typical login
       const token = jwt.sign({ id: user._id, email: user.email || user.phoneNumber }, JWT_SECRET, { expiresIn: '30d' });
-      res.json({ 
-        token, 
+      res.json({
+        token,
         userExists: true,
-        user: { 
-          name: user.name, 
-          email: user.email || "", 
+        user: {
+          name: user.name,
+          email: user.email || "",
           phoneNumber: user.phoneNumber || "",
           role: user.role || 'user',
           isApproved: true
-        } 
+        }
       });
     } catch (error) {
       res.status(500).json({ error: "Verification failed" });
@@ -860,10 +941,10 @@ async function startServer() {
     try {
       const { email, password } = req.body;
       if (!email || !password) return res.status(400).json({ error: "Email and password required" });
-      
+
       const normalizedEmail = email.toString().trim().toLowerCase();
       const user = await User.findOne({ email: normalizedEmail });
-      
+
       if (!user) {
         console.warn(`[Login] Failed: User not found for ${normalizedEmail}`);
         return res.status(400).json({ error: "Invalid credentials" });
@@ -872,7 +953,7 @@ async function startServer() {
       if (!user.password) {
         return res.status(400).json({ error: "This account uses OTP login. Please sign in with your phone/email OTP." });
       }
-      
+
       const isMatch = await bcrypt.compare(password, user.password as string);
       if (!isMatch) {
         console.warn(`[Login] Failed: Password mismatch for ${normalizedEmail}`);
@@ -894,7 +975,7 @@ async function startServer() {
 
       const { OAuth2Client } = await import('google-auth-library');
       const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-      
+
       const ticket = await client.verifyIdToken({
         idToken: credential,
         audience: process.env.GOOGLE_CLIENT_ID
@@ -905,13 +986,13 @@ async function startServer() {
       }
 
       const { email, name, sub: googleId } = payload;
-      
+
       let user = await User.findOne({ email });
       if (!user) {
         // Auto-create account for new Google users
-        user = new User({ 
-          name: name || email.split('@')[0], 
-          email, 
+        user = new User({
+          name: name || email.split('@')[0],
+          email,
           googleId,
           password: null // No password for Google users
         });
@@ -929,14 +1010,14 @@ async function startServer() {
       }
 
       const token = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, { expiresIn: '30d' });
-      res.json({ 
-        token, 
-        user: { 
-          name: user.name, 
-          email: user.email, 
-          role: user.role || 'user', 
-          isApproved: true 
-        } 
+      res.json({
+        token,
+        user: {
+          name: user.name,
+          email: user.email,
+          role: user.role || 'user',
+          isApproved: true
+        }
       });
     } catch (error: any) {
       console.error('[Google Auth Error]', error.message);
@@ -948,17 +1029,17 @@ async function startServer() {
     try {
       const { date } = req.query;
       if (!date) return res.status(400).json({ error: "Date is required" });
-      
+
       const tenMinsAgo = new Date(Date.now() - 10 * 60 * 1000);
-      const bookings = await Booking.find({ 
-        turfId: req.params.id, 
+      const bookings = await Booking.find({
+        turfId: req.params.id,
         date: date as string,
         $or: [
           { status: 'Confirmed' },
           { status: 'Pending', createdAt: { $gte: tenMinsAgo } }
         ]
       });
-      
+
       const bookedSlots = bookings.flatMap(b => (b.time || '').split(',').map(s => s.trim()));
       res.json({ bookedSlots });
     } catch (error) {
@@ -968,48 +1049,11 @@ async function startServer() {
 
   app.get("/api/turfs", async (req, res) => {
     try {
-      let turfs = await Turf.find();
-      if (turfs.length === 0) {
-          // If DB is empty, return the hardcoded Match Point Turf
-          let realRating = 4.98;
-          let realReviewCount = 342;
-          
-          try {
-            const reviews = await Review.find({ turfId: "1" });
-            if (reviews.length > 0) {
-              realReviewCount = reviews.length;
-              realRating = Number((reviews.reduce((acc, r) => acc + r.rating, 0) / realReviewCount).toFixed(2));
-            } else {
-              // Real 0 rating if no reviews
-              realRating = 0;
-              realReviewCount = 0;
-            }
-          } catch(e) {}
+      const { featured } = req.query;
+      let query: any = { isApproved: true };
+      if (featured === 'true') query.isFeatured = true;
 
-          return res.json([{
-            id: "1",
-            _id: "650000000000000000000001", // Mock ID
-            name: "Match Point Turf",
-            image: "/images/turf-night.jpg",
-            gallery: [
-              "/images/turf-night.jpg", 
-              "/images/turf-trophy.jpg",
-              "/images/turf-day.jpg",
-              "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&q=80&w=1200",
-              "https://images.unsplash.com/photo-1589487391730-58f20eb2c308?auto=format&fit=crop&q=80&w=1200"
-            ],
-            price: 10,
-            rating: realRating,
-            reviewCount: realReviewCount,
-            location: "Solapur",
-            subLocation: "Civil Hospital Road",
-            description: "Experience the ultimate matchday at Match Point Turf. Featuring high-grade artificial grass, professional floodlights for night sessions, and a dedicated trophy facility for your tournaments of Solapur.",
-            amenities: ["Night LED Floodlights", "Tournament Trophy Support", "Changing Rooms", "Free Parking", "Drinking Water", "First Aid"],
-            distance: "1.2 km away",
-            host: { name: "Match Point Team", avatar: "", years: 5 },
-            coordinates: { lat: 17.6599, lng: 75.9064 }
-          }]);
-      }
+      let turfs = await Turf.find(query);
 
       // If we have turfs in DB, we should dynamically calculate the rating to ensure it's not stuck on fake ratings
       const turfsWithRealRatings = await Promise.all(turfs.map(async (turf) => {
@@ -1040,67 +1084,31 @@ async function startServer() {
 
   app.get("/api/turfs/:id", async (req, res) => {
     try {
-      if (req.params.id === "1" || req.params.id === "650000000000000000000001") {
-          let realRating = 4.98;
-          let realReviewCount = 342;
-          
-          try {
-            const reviews = await Review.find({ turfId: req.params.id });
-            if (reviews.length > 0) {
-              realReviewCount = reviews.length;
-              realRating = Number((reviews.reduce((acc, r) => acc + r.rating, 0) / realReviewCount).toFixed(2));
-            } else {
-              realRating = 0;
-              realReviewCount = 0;
-            }
-          } catch(e) {}
+      const turfId = req.params.id;
+      let turf = await Turf.findById(turfId);
+      
+      // Support legacy ID "1" by finding the main Match Point Turf
+      if (!turf && turfId === "1") {
+        turf = await Turf.findOne({ name: /Match Point/i });
+      }
 
-          return res.json({
-            id: "1",
-            _id: "650000000000000000000001",
-            name: "Match Point Turf",
-            image: "/images/turf-night.jpg",
-            gallery: [
-              "/images/turf-night.jpg", 
-              "/images/turf-trophy.jpg",
-              "/images/turf-day.jpg",
-              "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&q=80&w=1200",
-              "https://images.unsplash.com/photo-1589487391730-58f20eb2c308?auto=format&fit=crop&q=80&w=1200"
-            ],
-            price: 10,
-            rating: realRating,
-            reviewCount: realReviewCount,
-            location: "Solapur",
-            subLocation: "Civil Hospital Road",
-            description: "Experience the ultimate matchday at Match Point Turf. Featuring high-grade artificial grass, professional floodlights for night sessions, and a dedicated trophy facility for your tournaments. The preferred destination for serious athletes in Solapur.",
-            amenities: ["Night LED Floodlights", "Tournament Trophy Support", "Changing Rooms", "Free Parking", "Drinking Water", "First Aid"],
-            distance: "1.2 km away",
-            host: { name: "Match Point Team", avatar: "", years: 5 },
-            coordinates: { lat: 17.6599, lng: 75.9064 }
-          });
+      if (!turf) return res.status(404).json({ error: "Turf not found" });
+
+      const turfObj = turf.toObject();
+      const reviews = await Review.find({ turfId: turf._id.toString() });
+      
+      if (reviews.length > 0) {
+        turfObj.reviewCount = reviews.length;
+        turfObj.rating = Number((reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(2));
+      } else {
+        turfObj.rating = turfObj.rating || 0;
+        turfObj.reviewCount = turfObj.reviewCount || 0;
       }
-      const turf = await Turf.findById(req.params.id);
-      if (turf) {
-        const turfObj = turf.toObject();
-        const reviews = await Review.find({ turfId: turfObj._id.toString() });
-        if (reviews.length > 0) {
-          turfObj.reviewCount = reviews.length;
-          turfObj.rating = Number((reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(2));
-        } else {
-          const mockReviews = await Review.find({ turfId: turfObj._id.toString() });
-          if (mockReviews.length > 0) {
-            turfObj.reviewCount = mockReviews.length;
-            turfObj.rating = Number((mockReviews.reduce((acc, r) => acc + r.rating, 0) / mockReviews.length).toFixed(2));
-          } else {
-            turfObj.rating = 0;
-            turfObj.reviewCount = 0;
-          }
-        }
-        return res.json(turfObj);
-      }
-      res.status(404).json({ error: "Turf not found" });
+
+      res.json(turfObj);
     } catch (error) {
-      res.status(404).json({ error: "Turf not found" });
+      console.error("Fetch turf error:", error);
+      res.status(500).json({ error: "Failed to fetch turf" });
     }
   });
 
@@ -1108,7 +1116,7 @@ async function startServer() {
   app.get("/api/turfs/:id/reviews", async (req, res) => {
     try {
       const reviews = await Review.find({ turfId: req.params.id }).sort({ createdAt: -1 });
-      
+
       res.json(reviews.map(r => ({
         id: r._id,
         author: r.author,
@@ -1132,7 +1140,7 @@ async function startServer() {
       }
 
       const date = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-      
+
       const newReview = new Review({
         turfId,
         author,
@@ -1146,7 +1154,7 @@ async function startServer() {
       // Update Turf rating and reviewCount
       const allReviews = await Review.find({ turfId });
       const avgRating = allReviews.reduce((acc, r) => acc + r.rating, 0) / allReviews.length;
-      
+
       if (mongoose.Types.ObjectId.isValid(turfId)) {
         await Turf.findByIdAndUpdate(turfId, {
           rating: parseFloat(avgRating.toFixed(2)),
@@ -1213,7 +1221,7 @@ async function startServer() {
       const identifiers = [];
       if (user.email) identifiers.push(user.email);
       if (user.phoneNumber) identifiers.push(user.phoneNumber);
-      
+
       if (identifiers.length === 0) identifiers.push('undefined');
 
       const bookings = await Booking.find({ userEmail: { $in: identifiers } }).sort({ createdAt: -1 });
@@ -1270,15 +1278,15 @@ async function startServer() {
         const startTime = (timeStr || '').split(' - ')[0].trim();
         const friendlyDate = dateStr.match(/(\d{1,2})\s+([A-Z]{3})/i);
         const months: Record<string, string> = {
-          JAN:'01',FEB:'02',MAR:'03',APR:'04',MAY:'05',JUN:'06',
-          JUL:'07',AUG:'08',SEP:'09',OCT:'10',NOV:'11',DEC:'12'
+          JAN: '01', FEB: '02', MAR: '03', APR: '04', MAY: '05', JUN: '06',
+          JUL: '07', AUG: '08', SEP: '09', OCT: '10', NOV: '11', DEC: '12'
         };
         let resolvedDate: string;
         if (dateStr === 'Today' || !dateStr) {
           resolvedDate = new Date().toISOString().split('T')[0];
         } else if (friendlyDate) {
           const year = new Date().getFullYear();
-          resolvedDate = `${year}-${months[friendlyDate[2].toUpperCase()] || '01'}-${friendlyDate[1].padStart(2,'0')}`;
+          resolvedDate = `${year}-${months[friendlyDate[2].toUpperCase()] || '01'}-${friendlyDate[1].padStart(2, '0')}`;
         } else {
           resolvedDate = dateStr;
         }
@@ -1288,9 +1296,9 @@ async function startServer() {
           let hr = parseInt(h12[1]);
           if (h12[3].toUpperCase() === 'PM' && hr !== 12) hr += 12;
           if (h12[3].toUpperCase() === 'AM' && hr === 12) hr = 0;
-          return new Date(`${resolvedDate}T${String(hr).padStart(2,'0')}:${h12[2]}:00+05:30`);
+          return new Date(`${resolvedDate}T${String(hr).padStart(2, '0')}:${h12[2]}:00+05:30`);
         } else if (h24) {
-          return new Date(`${resolvedDate}T${h24[1].padStart(2,'0')}:${h24[2]}:00+05:30`);
+          return new Date(`${resolvedDate}T${h24[1].padStart(2, '0')}:${h24[2]}:00+05:30`);
         }
         return new Date(NaN);
       };
@@ -1341,7 +1349,7 @@ async function startServer() {
       const hoursUntilStart = isNaN(turfStartDate.getTime())
         ? 999  // Can't parse the time — allow cancellation
         : (turfStartDate.getTime() - Date.now()) / (1000 * 60 * 60);
-      
+
       const isWithinNoRefundWindow = hoursUntilStart < 12;
       let refundAmount = 0;
       let refundStatus = 'no_refund';
@@ -1413,14 +1421,14 @@ async function startServer() {
                   <hr style="border:none;border-top:1px solid #e4e4e7;margin:12px 0;"/>
                   <p style="margin:6px 0;"><strong>Amount Paid:</strong> ₹${booking.amount}</p>
                   ${isWithinNoRefundWindow
-                    ? `<p style="margin:6px 0;color:#ef4444;"><strong>Refund:</strong> Not applicable (cancelled within 12 hours of start time)</p>`
-                    : `<p style="margin:6px 0;color:#ef4444;"><strong>Platform Fee (non-refundable):</strong> − ₹${PLATFORM_FEE}</p>
+              ? `<p style="margin:6px 0;color:#ef4444;"><strong>Refund:</strong> Not applicable (cancelled within 12 hours of start time)</p>`
+              : `<p style="margin:6px 0;color:#ef4444;"><strong>Platform Fee (non-refundable):</strong> − ₹${PLATFORM_FEE}</p>
                        <p style="margin:6px 0;color:#059669;"><strong>Refund Initiated:</strong> ₹${refundAmount}</p>`
-                  }
+            }
                 </div>
-                <p style="color:#71717a;font-size:14px;line-height:1.6;">${isWithinNoRefundWindow 
-                  ? 'As per our policy, bookings cancelled within 12 hours of the start time are not eligible for a refund.' 
-                  : 'Your refund has been initiated through Razorpay and should reflect in your account within 5-7 business days.'}</p>
+                <p style="color:#71717a;font-size:14px;line-height:1.6;">${isWithinNoRefundWindow
+              ? 'As per our policy, bookings cancelled within 12 hours of the start time are not eligible for a refund.'
+              : 'Your refund has been initiated through Razorpay and should reflect in your account within 5-7 business days.'}</p>
                 <p style="color:#a1a1aa;font-size:12px;margin-top:32px;">— The QuickTurf Team, Solapur</p>
               </div>
             </div>
@@ -1534,7 +1542,7 @@ async function startServer() {
 
   app.post("/api/create-payment-intent", async (req, res) => {
     const { amount, turfId, date, time, userEmail } = req.body;
-    
+
     try {
       const authHeader = req.headers.authorization;
       if (!authHeader) return res.status(401).json({ error: "Unauthorized" });
@@ -1577,9 +1585,9 @@ async function startServer() {
       });
 
       if (existingBooking) {
-        return res.status(409).json({ 
-          success: false, 
-          error: "This slot is currently being booked by someone else. Please try another slot or check back in 10 minutes." 
+        return res.status(409).json({
+          success: false,
+          error: "This slot is currently being booked by someone else. Please try another slot or check back in 10 minutes."
         });
       }
 
@@ -1613,9 +1621,9 @@ async function startServer() {
         userEmail: identifier
       });
       await newBooking.save();
-      
-      res.json({ 
-        success: true, 
+
+      res.json({
+        success: true,
         isSimulation,
         orderId,
         amount: amountInPaise,
@@ -1629,7 +1637,7 @@ async function startServer() {
 
   app.post("/api/verify-payment", async (req, res) => {
     const { orderId, amount, turfId, date, time, userEmail, rzpPayload } = req.body;
-    
+
     try {
       const key_secret = process.env.RAZORPAY_KEY_SECRET;
 
@@ -1657,11 +1665,11 @@ async function startServer() {
         { status: 'Confirmed', paymentId: rzpPayload?.razorpay_payment_id || 'SIMULATED' },
         { new: true }
       );
-      
+
       if (!updatedBooking) {
         return res.status(404).json({ success: false, error: "Booking lock not found" });
       }
-      
+
       res.json({ success: true });
     } catch (error) {
       console.error("Booking verification error:", error);
@@ -1671,46 +1679,68 @@ async function startServer() {
 
   // Seed Data Route (Temporary)
   app.post("/api/seed", async (req, res) => {
-    const { force } = req.body;
-    const count = await Turf.countDocuments();
-    
-    if (count > 0 && !force) return res.json({ message: "Already seeded. Use {force: true} to reset." });
-    
-    if (force) {
-      await Turf.deleteMany({});
-    }
-    
-    const initialTurfs = [
-      { 
-        name: "Match Point Turf", 
-        image: "/images/turf-night.jpg", 
-        gallery: [
-          "/images/turf-night.jpg",
-          "/images/turf-trophy.jpg",
-          "/images/turf-day.jpg",
-          "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&q=80&w=1200",
-          "https://images.unsplash.com/photo-1589487391730-58f20eb2c308?auto=format&fit=crop&q=80&w=1200"
-        ],
-        price: 10, 
-        rating: 4.98, 
-        reviewCount: 342, 
-        location: "Civil Hospital Road, Solapur", 
-        subLocation: "Solapur", 
-        description: "Experience the ultimate matchday at Match Point Turf. Featuring high-grade artificial grass, professional floodlights for night sessions, and a dedicated trophy facility for your tournaments. The preferred destination for serious athletes in Solapur.",
-        type: "Football / Cricket / Box Cricket", 
-        facilities: ["FIFA Grade Turf", "LED Floodlights", "Tournament Trophy Support", "Changing Rooms"], 
-        amenities: ["Night LED Floodlights", "Tournament Trophy Support", "Changing Rooms", "Free Parking", "Drinking Water", "First Aid"],
-        host: {
-          name: "Match Point Team",
-          avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuD9OLYFJoFVIRdzeuJxH5vnWGU49nraZMiWq5TkrxpBEg-s7br2RFJrGdKS8fhVTmGmNLgigfKEPMuvxXTUmQRsAodE7TIrNpGxZq5vmjkcXQk2rKOjL3LrshAOcqQyA7mVJi62eT864uDA7qo7kdBORgq4NDc3UGQHod7wbbH9YBDBEu7ni1tPzvSkPQbjsv_12OSo14JlqYtv3c3xB1Nt8eUp8NiJAXTKK-0xHtIA0YWlVZtPo4V6FFf7FQxOTx45uVk7-P-kCpA",
-          years: 5
-        },
-        coordinates: { lat: 17.6599, lng: 75.9064 } 
+    try {
+      const { force } = req.body;
+      const count = await Turf.countDocuments();
+
+      if (count > 0 && !force) return res.json({ message: "Already seeded. Use {force: true} to reset." });
+
+      if (force) {
+        await Turf.deleteMany({});
       }
-    ];
-    
-    await Turf.insertMany(initialTurfs);
-    res.json({ message: "Seeded successfully with Match Point Turf" });
+
+      // Find or create the owner
+      const ownerEmail = "mangeshchavan374@gmail.com";
+      let owner = await User.findOne({ email: ownerEmail });
+      if (!owner) {
+        owner = new User({
+          name: "Mangesh Chavan",
+          email: ownerEmail,
+          role: "admin",
+          isApproved: true
+        });
+        await owner.save();
+      }
+
+      const initialTurfs = [
+        {
+          ownerId: owner._id,
+          name: "Match Point Turf",
+          image: "/images/turf-night.jpg",
+          gallery: [
+            "/images/turf-night.jpg",
+            "/images/turf-trophy.jpg",
+            "/images/turf-day.jpg",
+            "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&q=80&w=1200",
+            "https://images.unsplash.com/photo-1589487391730-58f20eb2c308?auto=format&fit=crop&q=80&w=1200"
+          ],
+          price: 10,
+          rating: 4.98,
+          reviewCount: 342,
+          location: "Civil Hospital Road, Solapur",
+          subLocation: "Solapur",
+          description: "Experience the ultimate matchday at Match Point Turf. Featuring high-grade artificial grass, professional floodlights for night sessions, and a dedicated trophy facility for your tournaments. The preferred destination for serious athletes in Solapur.",
+          type: "Football / Cricket / Box Cricket",
+          facilities: ["FIFA Grade Turf", "LED Floodlights", "Tournament Trophy Support", "Changing Rooms"],
+          amenities: ["Night LED Floodlights", "Tournament Trophy Support", "Changing Rooms", "Free Parking", "Drinking Water", "First Aid"],
+          contactNumber: "+91 98765 43210",
+          host: {
+            name: "Match Point Team",
+            avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuD9OLYFJoFVIRdzeuJxH5vnWGU49nraZMiWq5TkrxpBEg-s7br2RFJrGdKS8fhVTmGmNLgigfKEPMuvxXTUmQRsAodE7TIrNpGxZq5vmjkcXQk2rKOjL3LrshAOcqQyA7mVJi62eT864uDA7qo7kdBORgq4NDc3UGQHod7wbbH9YBDBEu7ni1tPzvSkPQbjsv_12OSo14JlqYtv3c3xB1Nt8eUp8NiJAXTKK-0xHtIA0YWlVZtPo4V6FFf7FQxOTx45uVk7-P-kCpA",
+            years: 5
+          },
+          coordinates: { lat: 17.6599, lng: 75.9064 },
+          isApproved: true,
+          isFeatured: true
+        }
+      ];
+
+      await Turf.insertMany(initialTurfs);
+      res.json({ message: "Seeded successfully with Match Point Turf owned by " + ownerEmail });
+    } catch (error) {
+      console.error("Seed error:", error);
+      res.status(500).json({ error: "Failed to seed data" });
+    }
   });
 
   // API only in this split setup

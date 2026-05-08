@@ -25,6 +25,14 @@ interface Turf {
   name: string;
   price: number;
   location: string;
+  subLocation?: string;
+  type?: string[];
+  description?: string;
+  contactNumber?: string;
+  image?: string;
+  amenities?: string[];
+  isApproved?: boolean;
+  isFeatured?: boolean;
   isDisabled?: boolean;
   disabledReason?: string;
   ownerId: { _id: string; name: string; email: string; isApproved: boolean; isBanned: boolean };
@@ -46,6 +54,7 @@ type Modal =
   | { type: "ban"; partner: Partner }
   | { type: "detail"; partner: Partner }
   | { type: "disable-turf"; turf: Turf }
+  | { type: "turf-detail"; turf: Turf }
   | null;
 
 export default function SuperAdminDashboard() {
@@ -137,7 +146,24 @@ export default function SuperAdminDashboard() {
     if (res.ok) { showToast(`Turf enabled`); fetchData(); }
   };
 
+  const handleApproveTurf = async (id: string) => {
+    const res = await fetch(`/api/superadmin/turfs/${id}/approve`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+    if (res.ok) { showToast(`Turf approved`); fetchData(); }
+  };
+
+  const handleRejectTurf = async (id: string) => {
+    if(!confirm("Are you sure you want to reject and delete this turf request?")) return;
+    const res = await fetch(`/api/superadmin/turfs/${id}/reject`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+    if (res.ok) { showToast(`Turf request rejected`); fetchData(); }
+  };
+
+  const handleToggleFeatured = async (id: string) => {
+    const res = await fetch(`/api/superadmin/turfs/${id}/toggle-featured`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+    if (res.ok) { showToast(`Featured status updated`); fetchData(); }
+  };
+
   const pending = partners.filter(p => !p.isApproved && !p.isBanned);
+  const pendingTurfs = turfs.filter(t => !t.isApproved);
   
   // Filtered partners
   const filteredPartners = partners.filter(p => p.isApproved || p.isBanned).filter(p => 
@@ -169,7 +195,7 @@ export default function SuperAdminDashboard() {
         <nav className="flex-1 p-4 flex flex-col gap-2">
           {[
             { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-            { id: "approvals", label: "Approvals", icon: CheckCircle2, badge: pending.length },
+            { id: "approvals", label: "Approvals", icon: CheckCircle2, badge: pending.length + pendingTurfs.length },
             { id: "partners", label: "Partners", icon: Users },
             { id: "turfs", label: "Turfs", icon: MapPin },
           ].map(item => (
@@ -287,29 +313,77 @@ export default function SuperAdminDashboard() {
 
             {/* ── Approvals Tab ── */}
             {activeTab === "approvals" && (
-              pending.length === 0 ? (
+              (pending.length === 0 && pendingTurfs.length === 0) ? (
                 <div className="bg-white p-12 rounded-3xl border border-surface-container text-center flex flex-col items-center">
                   <div className="w-16 h-16 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mb-4">
                     <CheckCircle2 className="w-8 h-8" />
                   </div>
                   <h3 className="text-xl font-serif font-bold">Inbox Zero</h3>
-                  <p className="text-secondary text-sm mt-2">No pending applications.</p>
+                  <p className="text-secondary text-sm mt-2">No pending partner applications or turf requests.</p>
                 </div>
               ) : (
-                <div className="grid gap-4">
-                  {pending.map(partner => (
-                    <div key={partner._id} className="bg-white p-6 rounded-3xl border border-orange-200 shadow-sm flex items-center justify-between">
-                      <div>
-                        <h3 className="font-bold text-lg">{partner.name || "Unnamed"}</h3>
-                        <p className="text-secondary text-sm">{partner.email}</p>
-                        <p className="text-xs text-secondary mt-1">Applied: {new Date(partner.createdAt).toLocaleDateString()}</p>
-                      </div>
-                      <div className="flex gap-2">
-                        <button className="px-4 py-2 text-rose-600 font-bold bg-rose-50 hover:bg-rose-100 rounded-xl text-sm transition-colors">Reject</button>
-                        <button onClick={() => handleApprove(partner._id)} className="px-6 py-2 bg-primary text-white font-bold rounded-xl text-sm hover:brightness-110 transition-all shadow-md">Approve</button>
+                <div className="space-y-8">
+                  {/* Partner Approvals */}
+                  {pending.length > 0 && (
+                    <div className="space-y-4">
+                      <h3 className="text-sm font-bold text-secondary uppercase tracking-widest px-2">Partner Applications ({pending.length})</h3>
+                      <div className="grid gap-4">
+                        {pending.map(partner => (
+                          <div key={partner._id} className="bg-white p-6 rounded-3xl border border-orange-200 shadow-sm flex items-center justify-between">
+                            <div>
+                              <h3 className="font-bold text-lg">{partner.name || "Unnamed"}</h3>
+                              <p className="text-secondary text-sm">{partner.email}</p>
+                              <p className="text-xs text-secondary mt-1">Applied: {new Date(partner.createdAt).toLocaleDateString()}</p>
+                            </div>
+                            <div className="flex gap-2">
+                              <button className="px-4 py-2 text-rose-600 font-bold bg-rose-50 hover:bg-rose-100 rounded-xl text-sm transition-colors">Reject</button>
+                              <button onClick={() => handleApprove(partner._id)} className="px-6 py-2 bg-primary text-white font-bold rounded-xl text-sm hover:brightness-110 transition-all shadow-md">Approve</button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  ))}
+                  )}
+
+                  {/* Turf Approvals */}
+                  {pendingTurfs.length > 0 && (
+                    <div className="space-y-4">
+                      <h3 className="text-sm font-bold text-secondary uppercase tracking-widest px-2">Turf Requests ({pendingTurfs.length})</h3>
+                      <div className="grid gap-4">
+                        {pendingTurfs.map(turf => (
+                          <div key={turf._id} className="bg-white p-6 rounded-3xl border border-orange-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                            <div className="flex items-center gap-4 flex-1">
+                              <div className="w-20 h-20 rounded-2xl bg-surface-container overflow-hidden flex-shrink-0">
+                                <img src={turf.image || "https://images.unsplash.com/photo-1459865264687-595d652de67e?q=80&w=2070&auto=format&fit=crop"} alt={turf.name} className="w-full h-full object-cover" />
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <h3 className="font-bold text-lg">{turf.name}</h3>
+                                  <button 
+                                    onClick={() => handleToggleFeatured(turf._id)}
+                                    className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest transition-all ${turf.isFeatured ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'bg-surface-container text-secondary border border-surface-container'}`}
+                                  >
+                                    {turf.isFeatured ? 'Featured' : 'Not Featured'}
+                                  </button>
+                                </div>
+                                <div className="flex items-center gap-2 text-secondary text-sm">
+                                  <span>{turf.ownerId?.name || "Unknown"}</span>
+                                  <span>•</span>
+                                  <span>{turf.location}, {turf.subLocation}</span>
+                                </div>
+                                <p className="text-[10px] font-bold text-primary uppercase mt-1">₹{turf.price}/hr • {Array.isArray(turf.type) ? turf.type.join(", ") : turf.type}</p>
+                              </div>
+                            </div>
+                            <div className="flex gap-2 w-full md:w-auto">
+                              <button onClick={() => setModal({ type: "turf-detail", turf })} className="flex-1 md:flex-none px-4 py-2 text-secondary font-bold bg-surface-container hover:bg-surface-container/80 rounded-xl text-sm transition-colors">Details</button>
+                              <button onClick={() => handleRejectTurf(turf._id)} className="flex-1 md:flex-none px-4 py-2 text-rose-600 font-bold bg-rose-50 hover:bg-rose-100 rounded-xl text-sm transition-colors">Reject</button>
+                              <button onClick={() => handleApproveTurf(turf._id)} className="flex-1 md:flex-none px-6 py-2 bg-primary text-white font-bold rounded-xl text-sm hover:brightness-110 transition-all shadow-md">Approve</button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )
             )}
@@ -348,6 +422,7 @@ export default function SuperAdminDashboard() {
                         </td>
                         <td className="p-5 text-right">
                           <div className="flex items-center justify-end gap-2">
+                            <button onClick={() => setModal({ type: "detail", partner: p })} className="px-3 py-1.5 text-xs font-bold text-secondary bg-surface-container rounded-lg hover:bg-surface-container/80">Profile</button>
                             {!p.isBanned && (
                               <button onClick={() => setModal({ type: "warn", partner: p })} className="px-3 py-1.5 text-xs font-bold text-amber-700 bg-amber-50 rounded-lg hover:bg-amber-100">Warn</button>
                             )}
@@ -374,6 +449,7 @@ export default function SuperAdminDashboard() {
                       <th className="p-5">Turf Name</th>
                       <th className="p-5">Owner</th>
                       <th className="p-5">Location</th>
+                      <th className="p-5">Featured</th>
                       <th className="p-5">Status</th>
                       <th className="p-5 text-right">Actions</th>
                     </tr>
@@ -394,21 +470,43 @@ export default function SuperAdminDashboard() {
                           <p className="text-xs text-secondary">{t.location}</p>
                         </td>
                         <td className="p-5">
+                          <button 
+                            onClick={() => handleToggleFeatured(t._id)}
+                            className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all ${t.isFeatured ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'bg-surface-container text-secondary border border-surface-container'}`}
+                          >
+                            {t.isFeatured ? 'Featured' : 'Mark Featured'}
+                          </button>
+                        </td>
+                        <td className="p-5">
                           {t.isDisabled ? 
                             <span className="px-2 py-1 bg-orange-100 text-orange-700 rounded-md text-[10px] font-bold">Disabled</span> :
                             <span className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-md text-[10px] font-bold">Active</span>
                           }
                         </td>
-                        <td className="p-5 text-right">
-                          {t.isDisabled ? (
-                            <button onClick={() => handleEnableTurf(t._id, t.name)} className="px-3 py-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 rounded-lg hover:bg-emerald-100 flex items-center justify-end gap-1 ml-auto">
-                              <Power className="w-3 h-3" /> Enable
+                         <td className="p-5 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button onClick={() => setModal({ type: "turf-detail", turf: t })} className="px-3 py-1.5 text-xs font-bold text-secondary bg-surface-container rounded-lg hover:bg-surface-container/80">Details</button>
+                            {t.isDisabled ? (
+                              <button onClick={() => handleEnableTurf(t._id, t.name)} className="px-3 py-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 rounded-lg hover:bg-emerald-100 flex items-center justify-end gap-1">
+                                <Power className="w-3 h-3" /> Enable
+                              </button>
+                            ) : (
+                              <button onClick={() => setModal({ type: "disable-turf", turf: t })} className="px-3 py-1.5 text-xs font-bold text-orange-700 bg-orange-50 rounded-lg hover:bg-orange-100 flex items-center justify-end gap-1">
+                                <PowerOff className="w-3 h-3" /> Disable
+                              </button>
+                            )}
+                            <button 
+                              onClick={async () => {
+                                if(!confirm(`Are you sure you want to PERMANENTLY DELETE "${t.name}"? This action cannot be undone.`)) return;
+                                const res = await fetch(`/api/superadmin/turfs/${t._id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+                                if (res.ok) { showToast(`Turf deleted`); fetchData(); }
+                              }}
+                              className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
+                              title="Delete Turf"
+                            >
+                              <XCircle className="w-4 h-4" />
                             </button>
-                          ) : (
-                            <button onClick={() => setModal({ type: "disable-turf", turf: t })} className="px-3 py-1.5 text-xs font-bold text-orange-700 bg-orange-50 rounded-lg hover:bg-orange-100 flex items-center justify-end gap-1 ml-auto">
-                              <PowerOff className="w-3 h-3" /> Disable
-                            </button>
-                          )}
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -484,15 +582,173 @@ export default function SuperAdminDashboard() {
                 </div>
               )}
 
-              {/* History Modal */}
+              {/* Partner Profile Modal */}
               {modal.type === "detail" && (
-                <div className="space-y-3 max-h-72 overflow-y-auto">
-                  {modal.partner.warnings?.map((w, i) => (
-                    <div key={i} className="p-4 bg-amber-50 border border-amber-100 rounded-2xl text-sm">
-                      <p className="font-semibold text-amber-900">{w.message}</p>
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700 mt-2">By {w.warnedBy} • {new Date(w.warnedAt).toLocaleDateString()}</p>
+                <div className="space-y-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary text-2xl font-serif font-bold">
+                      {modal.partner.name?.charAt(0).toUpperCase()}
                     </div>
-                  ))}
+                    <div>
+                      <h3 className="font-serif font-bold text-xl">{modal.partner.name || "Unnamed Partner"}</h3>
+                      <p className="text-secondary text-sm">{modal.partner.email}</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-4 bg-surface-container/50 rounded-2xl">
+                      <h4 className="text-[10px] font-black text-secondary uppercase tracking-widest mb-1">Status</h4>
+                      <div className="flex items-center gap-2">
+                        {modal.partner.isBanned ? (
+                          <span className="text-rose-600 font-bold text-sm">Banned</span>
+                        ) : modal.partner.isApproved ? (
+                          <span className="text-emerald-600 font-bold text-sm">Active & Approved</span>
+                        ) : (
+                          <span className="text-amber-600 font-bold text-sm">Pending Approval</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="p-4 bg-surface-container/50 rounded-2xl">
+                      <h4 className="text-[10px] font-black text-secondary uppercase tracking-widest mb-1">Joined On</h4>
+                      <p className="text-sm font-bold text-on-background">{new Date(modal.partner.createdAt).toLocaleDateString()}</p>
+                    </div>
+                  </div>
+
+                  {modal.partner.isBanned && (
+                    <div className="p-4 bg-rose-50 border border-rose-100 rounded-2xl">
+                      <h4 className="text-[10px] font-black text-rose-600 uppercase tracking-widest mb-1">Ban Reason</h4>
+                      <p className="text-sm text-rose-900 font-medium">{modal.partner.banReason || "No reason specified."}</p>
+                    </div>
+                  )}
+
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-bold text-on-background px-1">Disciplinary History</h4>
+                    <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
+                      {modal.partner.warnings && modal.partner.warnings.length > 0 ? (
+                        modal.partner.warnings.map((w, i) => (
+                          <div key={i} className="p-3 bg-amber-50 border border-amber-100 rounded-xl text-xs">
+                            <p className="font-semibold text-amber-900">{w.message}</p>
+                            <p className="text-[9px] text-amber-700 mt-1 uppercase tracking-wider">By {w.warnedBy} • {new Date(w.warnedAt).toLocaleDateString()}</p>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-xs text-secondary italic text-center py-4 bg-surface-container/30 rounded-xl">No warnings on record.</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-bold text-on-background px-1">Turfs Owned</h4>
+                    <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
+                      {turfs.filter(t => t.ownerId?._id === modal.partner._id).length > 0 ? (
+                        turfs.filter(t => t.ownerId?._id === modal.partner._id).map((t, i) => (
+                          <div key={i} className="flex items-center justify-between p-3 bg-surface-container/50 rounded-xl">
+                            <div className="flex items-center gap-3 overflow-hidden">
+                              <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0">
+                                <img src={t.image} alt="" className="w-full h-full object-cover" />
+                              </div>
+                              <span className="text-xs font-bold truncate">{t.name}</span>
+                            </div>
+                            <button 
+                              onClick={() => setModal({ type: "turf-detail", turf: t })}
+                              className="text-[10px] font-bold text-primary hover:underline flex-shrink-0"
+                            >
+                              View
+                            </button>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-xs text-secondary italic text-center py-4 bg-surface-container/30 rounded-xl">No turfs listed yet.</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 pt-2">
+                    {!modal.partner.isBanned && (
+                      <button 
+                        onClick={() => setModal({ type: "warn", partner: modal.partner })}
+                        className="flex-1 py-3 bg-amber-50 text-amber-700 font-bold text-xs rounded-xl hover:bg-amber-100 transition-colors"
+                      >
+                        Issue Warning
+                      </button>
+                    )}
+                    {modal.partner.isBanned ? (
+                      <button 
+                        onClick={() => { handleUnban(modal.partner._id, modal.partner.name); setModal(null); }}
+                        className="flex-1 py-3 bg-emerald-600 text-white font-bold text-xs rounded-xl hover:brightness-110 transition-all shadow-md"
+                      >
+                        Reactivate Account
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={() => setModal({ type: "ban", partner: modal.partner })}
+                        className="flex-1 py-3 bg-rose-50 text-rose-600 font-bold text-xs rounded-xl hover:bg-rose-100 transition-colors"
+                      >
+                        Ban Partner
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Turf Detail Modal */}
+              {modal.type === "turf-detail" && (
+                <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2">
+                  <div className="aspect-video w-full rounded-2xl overflow-hidden bg-surface-container">
+                    <img src={modal.turf.image} alt={modal.turf.name} className="w-full h-full object-cover" />
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="text-[10px] font-black text-secondary uppercase tracking-[0.2em] mb-1">Description</h4>
+                      <p className="text-sm text-on-background leading-relaxed">{modal.turf.description || "No description provided."}</p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="text-[10px] font-black text-secondary uppercase tracking-[0.2em] mb-1">Contact</h4>
+                        <p className="text-sm font-bold text-on-background">{modal.turf.contactNumber || "N/A"}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-[10px] font-black text-secondary uppercase tracking-[0.2em] mb-1">Pricing</h4>
+                        <p className="text-sm font-bold text-primary">₹{modal.turf.price}/hr</p>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 className="text-[10px] font-black text-secondary uppercase tracking-[0.2em] mb-2">Amenities</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {modal.turf.amenities && modal.turf.amenities.length > 0 ? (
+                          modal.turf.amenities.map((a, i) => (
+                            <span key={i} className="px-2 py-1 bg-surface-container text-secondary rounded-lg text-[10px] font-bold uppercase">{a}</span>
+                          ))
+                        ) : (
+                          <span className="text-xs text-secondary italic">None listed</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10">
+                      <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-1">Owner Info</h4>
+                      <p className="text-sm font-bold">{modal.turf.ownerId?.name}</p>
+                      <p className="text-xs text-secondary">{modal.turf.ownerId?.email}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 pt-4 border-t border-surface-container sticky bottom-0 bg-white">
+                    <button 
+                      onClick={() => { handleRejectTurf(modal.turf._id); setModal(null); }}
+                      className="flex-1 py-3 rounded-2xl bg-rose-50 text-rose-600 font-bold text-sm hover:bg-rose-100 transition-colors"
+                    >
+                      Reject Request
+                    </button>
+                    <button 
+                      onClick={() => { handleApproveTurf(modal.turf._id); setModal(null); }}
+                      className="flex-1 py-3 rounded-2xl bg-primary text-white font-bold text-sm hover:brightness-110 transition-all shadow-md"
+                    >
+                      Approve Venue
+                    </button>
+                  </div>
                 </div>
               )}
             </motion.div>

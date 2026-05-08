@@ -11,7 +11,7 @@ const turfSchema = new mongoose.Schema({
   location: { type: String, required: true },
   subLocation: { type: String, required: true },
   description: { type: String },
-  type: { type: String, required: true },
+  type: { type: [String], required: true },
   facilities: [String],
   amenities: [String],
   host: {
@@ -23,6 +23,9 @@ const turfSchema = new mongoose.Schema({
     lat: Number,
     lng: Number,
   },
+  isApproved: { type: Boolean, default: false },
+  isFeatured: { type: Boolean, default: false },
+  contactNumber: { type: String },
   isDisabled: { type: Boolean, default: false }, // superadmin can disable individual turfs
   disabledReason: { type: String, default: null },
 });

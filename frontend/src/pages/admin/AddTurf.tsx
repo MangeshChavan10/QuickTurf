@@ -15,7 +15,11 @@ export default function AddTurf() {
   const [price, setPrice] = useState("");
   const [location, setLocation] = useState("");
   const [subLocation, setSubLocation] = useState("");
-  const [type, setType] = useState("Cricket");
+  const [type, setType] = useState<string[]>([]);
+  const [description, setDescription] = useState("");
+  const [contactNumber, setContactNumber] = useState("");
+  const [facilities, setFacilities] = useState("");
+  const [amenities, setAmenities] = useState<string[]>([]);
   const [imageFile, setImageFile] = useState<File | null>(null);
 
   const handleSubmit = async (e: FormEvent) => {
@@ -34,7 +38,11 @@ export default function AddTurf() {
       formData.append("price", price);
       formData.append("location", location);
       formData.append("subLocation", subLocation);
-      formData.append("type", type);
+      formData.append("type", JSON.stringify(type));
+      formData.append("description", description);
+      formData.append("contactNumber", contactNumber);
+      formData.append("facilities", facilities);
+      formData.append("amenities", JSON.stringify(amenities));
       formData.append("image", imageFile);
 
       const res = await apiFetch("/api/admin/turfs", {
@@ -124,13 +132,61 @@ export default function AddTurf() {
                 <input required type="text" value={subLocation} onChange={e => setSubLocation(e.target.value)} className="w-full p-4 bg-background border border-surface-container focus:border-primary rounded-2xl outline-none transition-all font-medium" placeholder="e.g. Civil Lines Road" />
               </div>
               <div className="space-y-2 md:col-span-2">
-                <label className="text-xs font-bold text-secondary uppercase tracking-wider">Turf Type</label>
-                <select required value={type} onChange={e => setType(e.target.value)} className="w-full p-4 bg-background border border-surface-container focus:border-primary rounded-2xl outline-none transition-all font-medium appearance-none">
-                  <option value="Cricket">Cricket</option>
-                  <option value="Football">Football</option>
-                  <option value="Tennis">Tennis</option>
-                  <option value="Multi-Sport">Multi-Sport</option>
-                </select>
+                <label className="text-xs font-bold text-secondary uppercase tracking-wider">Turf Type (Select Multiple)</label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {["Football", "Cricket", "Badminton", "Multi-Sport", "Tennis", "Basketball"].map(t => (
+                    <label key={t} className={`flex items-center gap-2 p-3 rounded-xl border transition-all cursor-pointer ${type.includes(t) ? 'bg-primary/5 border-primary' : 'border-surface-container hover:bg-surface-container'}`}>
+                      <input
+                        type="checkbox"
+                        className="hidden"
+                        checked={type.includes(t)}
+                        onChange={e => {
+                          if (e.target.checked) setType([...type, t]);
+                          else setType(type.filter(x => x !== t));
+                        }}
+                      />
+                      <div className={`w-4 h-4 rounded-md border flex items-center justify-center transition-all ${type.includes(t) ? 'bg-primary border-primary' : 'border-secondary/30'}`}>
+                        {type.includes(t) && <CheckCircle2 className="w-3 h-3 text-white" />}
+                      </div>
+                      <span className={`text-xs font-medium ${type.includes(t) ? 'text-primary' : 'text-secondary'}`}>{t}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-xs font-bold text-secondary uppercase tracking-wider">Amenities (Select Multiple)</label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {["Night LED Floodlights", "Changing Rooms", "Free Parking", "Drinking Water", "First Aid", "Cafeteria"].map(a => (
+                    <label key={a} className={`flex items-center gap-2 p-3 rounded-xl border transition-all cursor-pointer ${amenities.includes(a) ? 'bg-primary/5 border-primary' : 'border-surface-container hover:bg-surface-container'}`}>
+                      <input
+                        type="checkbox"
+                        className="hidden"
+                        checked={amenities.includes(a)}
+                        onChange={e => {
+                          if (e.target.checked) setAmenities([...amenities, a]);
+                          else setAmenities(amenities.filter(x => x !== a));
+                        }}
+                      />
+                      <div className={`w-4 h-4 rounded-md border flex items-center justify-center transition-all ${amenities.includes(a) ? 'bg-primary border-primary' : 'border-secondary/30'}`}>
+                        {amenities.includes(a) && <CheckCircle2 className="w-3 h-3 text-white" />}
+                      </div>
+                      <span className={`text-xs font-medium ${amenities.includes(a) ? 'text-primary' : 'text-secondary'}`}>{a}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-xs font-bold text-secondary uppercase tracking-wider">Contact Number</label>
+                <input required type="tel" value={contactNumber} onChange={e => setContactNumber(e.target.value)} className="w-full p-4 bg-background border border-surface-container focus:border-primary rounded-2xl outline-none transition-all font-medium" placeholder="e.g. +91 98765 43210" />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-xs font-bold text-secondary uppercase tracking-wider">Description</label>
+                <textarea required rows={4} value={description} onChange={e => setDescription(e.target.value)} className="w-full p-4 bg-background border border-surface-container focus:border-primary rounded-2xl outline-none transition-all font-medium resize-none" placeholder="Describe your turf, special features, etc." />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-xs font-bold text-secondary uppercase tracking-wider">Facilities (comma separated)</label>
+                <input required type="text" value={facilities} onChange={e => setFacilities(e.target.value)} className="w-full p-4 bg-background border border-surface-container focus:border-primary rounded-2xl outline-none transition-all font-medium" placeholder="e.g. Parking, Washroom, Drinking Water" />
               </div>
             </div>
           </div>

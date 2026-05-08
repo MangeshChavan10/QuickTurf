@@ -9,16 +9,20 @@ import { useAuth } from "../contexts/AuthContext";
 
 const AMENITY_ICONS: Record<string, any> = {
   "Night LED Floodlights": Lightbulb,
-  "Changing Rooms & Showers": Shirt,
-  "Free On-site Parking": Car,
-  "Filtered Drinking Water": Droplets,
-  "Spectator Stand (50 people)": Building,
   "Floodlights": Lightbulb,
+  "Changing Rooms & Showers": Shirt,
   "Changing Rooms": Shirt,
+  "Free On-site Parking": Car,
+  "Free Parking": Car,
   "Parking": Car,
-  "Power Backup": Lightbulb,
+  "Filtered Drinking Water": Droplets,
+  "Drinking Water": Droplets,
   "Water": Droplets,
-  "Refreshments": PlusCircle
+  "Spectator Stand (50 people)": Building,
+  "Power Backup": Lightbulb,
+  "Refreshments": PlusCircle,
+  "Cafeteria": PlusCircle,
+  "First Aid": ShieldCheck
 };
 
 export default function TurfDetail() {
@@ -436,7 +440,7 @@ export default function TurfDetail() {
                                     : isBooked
                                       ? 'bg-surface-container/30 border-transparent text-secondary/30 cursor-not-allowed line-through decoration-secondary/20'
                                       : isSelected
-                                        ? 'bg-on-background text-white border-on-background shadow-lg cursor-pointer'
+                                        ? 'bg-on-background text-background border-on-background shadow-lg cursor-pointer'
                                         : 'bg-transparent border-surface-container text-on-background hover:border-on-background cursor-pointer'
                                 }`}
                               >
@@ -476,20 +480,35 @@ export default function TurfDetail() {
                   <p className="text-on-background leading-relaxed text-base md:text-lg opacity-80">{turf.description}</p>
                 </div>
 
-                <div className="space-y-8">
-                  <h3 className="text-xl md:text-2xl font-serif">Facility Amenities</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {(turf.amenities || []).map((amenity, i) => {
-                      const Icon = AMENITY_ICONS[amenity] || ShieldCheck;
-                      return (
-                        <div key={i} className="flex items-center gap-4 p-4 bg-surface-container/50 rounded-2xl border border-transparent hover:border-primary/10 transition-all">
-                          <Icon className="w-5 h-5 text-primary" />
-                          <span className="font-bold text-sm text-on-background/80">{amenity}</span>
-                        </div>
-                      );
-                    })}
+                  <div className="space-y-8">
+                    <h3 className="text-xl md:text-2xl font-serif">Sports & Amenities</h3>
+                    
+                    <div className="space-y-4">
+                      <p className="text-[10px] font-black text-secondary uppercase tracking-[0.2em]">Supported Sports</p>
+                      <div className="flex flex-wrap gap-2">
+                        {(Array.isArray(turf.type) ? turf.type : [turf.type]).map((t, i) => (
+                          <span key={i} className="px-4 py-2 bg-primary/10 text-primary font-bold text-xs rounded-full border border-primary/20">
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <p className="text-[10px] font-black text-secondary uppercase tracking-[0.2em]">Facilities</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {(turf.amenities || []).map((amenity, i) => {
+                          const Icon = AMENITY_ICONS[amenity] || ShieldCheck;
+                          return (
+                            <div key={i} className="flex items-center gap-4 p-4 bg-surface-container/50 rounded-2xl border border-transparent hover:border-primary/10 transition-all">
+                              <Icon className="w-5 h-5 text-primary" />
+                              <span className="font-bold text-sm text-on-background/80">{amenity}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
-                </div>
               </div>
 
               <div className="pt-24 border-t border-surface-container">

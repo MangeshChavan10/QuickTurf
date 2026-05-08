@@ -48,9 +48,8 @@ export default function Explore() {
     
     let matchesFilter = true;
     if (activeFilter !== "All" && activeFilter !== "Price Range") {
-      matchesFilter = turf.type.toLowerCase().includes(activeFilter.toLowerCase()) || 
-                      (activeFilter === "Football" && turf.type.toLowerCase().includes("both")) ||
-                      (activeFilter === "Cricket" && turf.type.toLowerCase().includes("both"));
+      const types = Array.isArray(turf.type) ? turf.type : [turf.type];
+      matchesFilter = types.some(t => t.toLowerCase().includes(activeFilter.toLowerCase()));
     }
     // "All" or other filters don't strictly filter out in this mock
 
@@ -141,7 +140,7 @@ export default function Explore() {
                   <div className="flex justify-between items-start gap-4">
                     <div className="flex-1">
                       <h3 className="font-serif font-bold text-xl leading-tight group-hover:text-primary transition-colors line-clamp-1">{turf.name}</h3>
-                      <p className="text-secondary text-xs md:text-sm font-bold mt-1 opacity-70">{turf.subLocation} • {turf.distance}</p>
+                      <p className="text-secondary text-xs md:text-sm font-bold mt-1 opacity-70">{turf.subLocation}{turf.distance ? ` • ${turf.distance}` : ''}</p>
                       <div className="flex items-center gap-1.5 mt-3">
                         <div className="flex items-center bg-primary-container text-primary px-2 py-0.5 rounded-full">
                           <Star className="w-3 h-3 fill-amber-500 text-amber-500" />

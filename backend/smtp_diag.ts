@@ -14,7 +14,7 @@ async function diagnoseSMTP() {
   const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 587,
-    secure: false, // Use STARTTLS on 587
+    secure: false,
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS
@@ -27,7 +27,7 @@ async function diagnoseSMTP() {
     console.log('\nTesting connection...');
     await transporter.verify();
     console.log('✅ Connection verified successfully. Credentials are valid.');
-    
+
     console.log('\nSending test email...');
     const info = await transporter.sendMail({
       from: `"QuickTurf Diagnostic" <${process.env.SMTP_USER}>`,
@@ -36,7 +36,7 @@ async function diagnoseSMTP() {
       text: "If you are reading this, the QuickTurf SMTP server is working perfectly."
     });
     console.log(`✅ Test email sent successfully! Message ID: ${info.messageId}`);
-    
+
   } catch (error: any) {
     console.error('\n❌ SMTP Error Occurred:');
     console.error('Message:', error.message);

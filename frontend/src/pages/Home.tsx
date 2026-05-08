@@ -13,18 +13,18 @@ export default function Home() {
   useEffect(() => {
     // Only seed if database is empty or explicitly requested
     const checkAndSeed = async () => {
-      const res = await apiFetch("/api/turfs");
+      const res = await apiFetch("/api/turfs?featured=true");
       const data = await res.json();
-      if (data.length === 0) {
+      if (Array.isArray(data) && data.length === 0) {
         await apiFetch("/api/seed", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ force: false })
         });
-        const freshRes = await apiFetch("/api/turfs");
+        const freshRes = await apiFetch("/api/turfs?featured=true");
         const freshData = await freshRes.json();
-        setTurfs(freshData.slice(0, 4));
-      } else {
+        if (Array.isArray(freshData)) setTurfs(freshData.slice(0, 4));
+      } else if (Array.isArray(data)) {
         setTurfs(data.slice(0, 4));
       }
     };
